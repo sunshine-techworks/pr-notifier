@@ -3,7 +3,7 @@
     "quoteStyle": "preferSingle",
     "semiColons": "asi",
     "indentWidth": 2,
-    "trailingCommas": "es5",
+    "trailingCommas": "onlyMultiLine",
     "useTabs": false,
     "lineWidth": 100
   },

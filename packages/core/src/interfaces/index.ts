@@ -3,20 +3,20 @@ export type { UserDao } from './user-dao'
 export type { WorkspaceDao } from './workspace-dao'
 
 // Client interfaces
-export type { SlackClient } from './slack-client'
-export type { NotificationQueue } from './notification-queue'
 export type {
   GitHubClient,
+  GitHubUserValidationFailure,
   GitHubUserValidationResult,
   GitHubUserValidationSuccess,
-  GitHubUserValidationFailure,
 } from './github-client'
+export type { NotificationQueue } from './notification-queue'
+export type { SlackClient } from './slack-client'
 
 // Service interfaces
+export type { NotificationService } from './notification-service'
 export type {
-  UserService,
+  LinkAccountError,
   LinkAccountOutcome,
   LinkAccountSuccess,
-  LinkAccountError,
+  UserService,
 } from './user-service'
-export type { NotificationService } from './notification-service'

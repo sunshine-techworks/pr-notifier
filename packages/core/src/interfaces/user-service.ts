@@ -1,4 +1,4 @@
-import type { User, NotificationPreferences } from '../types/index'
+import type { NotificationPreferences, User } from '../types/index'
 
 /**
  * Result of a successful account linking
@@ -36,7 +36,7 @@ export interface UserService {
   linkGithubAccount(
     slackUserId: string,
     slackWorkspaceId: string,
-    githubUsername: string
+    githubUsername: string,
   ): Promise<LinkAccountOutcome>
 
   /**
@@ -54,7 +54,7 @@ export interface UserService {
    */
   updatePreferences(
     slackUserId: string,
-    preferences: Partial<NotificationPreferences>
+    preferences: Partial<NotificationPreferences>,
   ): Promise<User>
 
   /**
@@ -67,6 +67,6 @@ export interface UserService {
    */
   hasNotificationEnabled(
     user: User,
-    notificationType: keyof NotificationPreferences
+    notificationType: keyof NotificationPreferences,
   ): boolean
 }
