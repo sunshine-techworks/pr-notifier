@@ -1,10 +1,4 @@
-import type {
-  Notification,
-  NotificationType,
-  ReviewState,
-  SlackBlock,
-  User,
-} from '../types/index'
+import type { Notification, NotificationType, ReviewState, SlackBlock, User } from '../types/index'
 
 /**
  * Service interface for notification-related business logic

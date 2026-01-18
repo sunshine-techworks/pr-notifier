@@ -9,7 +9,7 @@ export interface SlackClient {
    */
   sendDirectMessage(
     userId: string,
-    message: SlackMessage
+    message: SlackMessage,
   ): Promise<SlackMessageResponse>
 
   /**
@@ -17,7 +17,7 @@ export interface SlackClient {
    */
   sendChannelMessage(
     channelId: string,
-    message: SlackMessage
+    message: SlackMessage,
   ): Promise<SlackMessageResponse>
 
   /**
@@ -26,19 +26,21 @@ export interface SlackClient {
   updateMessage(
     channelId: string,
     messageTs: string,
-    message: SlackMessage
+    message: SlackMessage,
   ): Promise<SlackMessageResponse>
 
   /**
    * Look up a user's info by their Slack ID
    */
-  getUserInfo(userId: string): Promise<{
-    id: string
-    name: string
-    realName?: string
-    email?: string
-    timezone?: string
-  } | null>
+  getUserInfo(userId: string): Promise<
+    {
+      id: string
+      name: string
+      realName?: string
+      email?: string
+      timezone?: string
+    } | null
+  >
 
   /**
    * Verify a Slack request signature
@@ -46,6 +48,6 @@ export interface SlackClient {
   verifySignature(
     signature: string,
     timestamp: string,
-    body: string
+    body: string,
   ): boolean
 }
