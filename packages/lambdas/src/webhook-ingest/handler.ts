@@ -1,17 +1,39 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-import { NotificationQueueImpl } from '@pr-notify/core'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
+import {
+  NotificationQueueImpl,
+  NotificationServiceImpl,
+  PinoLogger,
+  UserDaoImpl,
+  WebhookProcessorImpl,
+} from '@pr-notify/core'
+import type { ProcessingResult } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
 const GITHUB_WEBHOOK_SECRET = process.env['GITHUB_WEBHOOK_SECRET'] ?? ''
 const NOTIFICATION_QUEUE_URL = process.env['NOTIFICATION_QUEUE_URL'] ?? ''
+const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
 
-// TODO: Use queue when implementing webhook processing
-const _notificationQueue = new NotificationQueueImpl(NOTIFICATION_QUEUE_URL)
+// Initialize dependencies outside the handler for Lambda cold-start caching
+const dynamoClient = new DynamoDBClient({})
+const docClient = DynamoDBDocumentClient.from(dynamoClient)
+const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
+const notificationService = new NotificationServiceImpl()
+const notificationQueue = new NotificationQueueImpl(NOTIFICATION_QUEUE_URL)
+const logger = new PinoLogger()
+const webhookProcessor = new WebhookProcessorImpl(
+  userDao,
+  notificationService,
+  notificationQueue,
+  logger,
+)
 
 /**
- * Lambda handler for GitHub webhook ingestion
- * Validates the webhook signature, parses the event, and queues it for processing
+ * Lambda handler for GitHub webhook ingestion.
+ * Validates the webhook signature, parses the event, and dispatches
+ * to the WebhookProcessor which handles user lookup and SQS queuing.
  */
 export async function handler(
   event: APIGatewayProxyEvent,
@@ -22,7 +44,7 @@ export async function handler(
     const body = event.body ?? ''
 
     if (!verifyGitHubSignature(signature, body, GITHUB_WEBHOOK_SECRET)) {
-      console.error('Invalid GitHub webhook signature')
+      logger.error('Invalid GitHub webhook signature')
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid signature' }),
@@ -41,36 +63,48 @@ export async function handler(
     // Parse payload
     const payload = JSON.parse(body)
 
-    // Only process events we care about
-    const supportedEvents = [
-      'pull_request',
-      'pull_request_review',
-      'pull_request_review_comment',
-      'issue_comment',
-    ]
+    // Route to appropriate processor method based on event type
+    let result: ProcessingResult
 
-    if (!supportedEvents.includes(eventType)) {
-      console.log(`Ignoring unsupported event type: ${eventType}`)
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ message: 'Event type not supported' }),
-      }
+    switch (eventType) {
+      case 'pull_request':
+        result = await webhookProcessor.processPullRequestEvent(payload)
+        break
+      case 'pull_request_review':
+        result = await webhookProcessor.processPullRequestReviewEvent(payload)
+        break
+      case 'pull_request_review_comment':
+        result = await webhookProcessor.processPullRequestReviewCommentEvent(payload)
+        break
+      case 'issue_comment':
+        result = await webhookProcessor.processIssueCommentEvent(payload)
+        break
+      default:
+        logger.info('Ignoring unsupported event type', { eventType })
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ message: 'Event type not supported' }),
+        }
     }
 
-    // Queue the event for processing
-    // TODO: Transform payload into Notification and send to queue
-    console.log(`Received ${eventType} event`, {
+    logger.info('Webhook processed', {
+      eventType,
       action: payload.action,
       repository: payload.repository?.full_name,
+      notificationsSent: result.notificationsSent,
+      skipped: result.skipped.length,
     })
 
-    // Return 200 immediately to acknowledge receipt
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Webhook received' }),
+      body: JSON.stringify({
+        message: 'Webhook processed',
+        notificationsSent: result.notificationsSent,
+        skipped: result.skipped.length,
+      }),
     }
   } catch (error) {
-    console.error('Error processing webhook:', error)
+    logger.error('Error processing webhook', { error })
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal server error' }),
@@ -79,7 +113,7 @@ export async function handler(
 }
 
 /**
- * Verify GitHub webhook signature
+ * Verify GitHub webhook signature using HMAC-SHA256 with timing-safe comparison
  */
 function verifyGitHubSignature(
   signature: string,
