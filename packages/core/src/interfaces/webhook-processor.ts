@@ -61,7 +61,7 @@ export interface WebhookProcessor {
    * Notifies PR author and any @mentioned users about the comment.
    */
   processPullRequestReviewCommentEvent(
-    payload: PullRequestReviewCommentEvent
+    payload: PullRequestReviewCommentEvent,
   ): Promise<ProcessingResult>
 
   /**

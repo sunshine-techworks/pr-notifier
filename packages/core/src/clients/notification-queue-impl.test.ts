@@ -76,8 +76,7 @@ describe('NotificationQueueImpl', () => {
         createTestNotification({
           id: `notif_${i}`,
           targetSlackUserId: `U_USER_${i}`,
-        }),
-      )
+        }))
 
       await queue.sendBatch(notifications)
 
@@ -95,8 +94,7 @@ describe('NotificationQueueImpl', () => {
         createTestNotification({
           id: `notif_${i}`,
           targetSlackUserId: `U_USER_${i}`,
-        }),
-      )
+        }))
 
       await queue.sendBatch(notifications)
 
@@ -113,8 +111,7 @@ describe('NotificationQueueImpl', () => {
         createTestNotification({
           id: `notif_${i}`,
           targetSlackUserId: `U_USER_${i}`,
-        }),
-      )
+        }))
 
       await queue.sendBatch(notifications)
 
@@ -177,8 +174,7 @@ describe('NotificationQueueImpl', () => {
         createTestNotification({
           id: `notif_${i}`,
           targetSlackUserId: `U_USER_${i}`,
-        }),
-      )
+        }))
 
       await queue.sendBatch(notifications)
 

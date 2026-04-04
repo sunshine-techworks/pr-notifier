@@ -163,7 +163,9 @@ describe('NotificationServiceImpl', () => {
           })
           const blocks = service.buildSlackBlocks(notification)
 
-          const header = blocks.find((b): b is SlackBlock & { type: 'header' } => b.type === 'header')
+          const header = blocks.find((b): b is SlackBlock & { type: 'header' } =>
+            b.type === 'header'
+          )
           expect(header?.text.text).toBe('PR Approved!')
         })
 
@@ -174,7 +176,9 @@ describe('NotificationServiceImpl', () => {
           })
           const blocks = service.buildSlackBlocks(notification)
 
-          const header = blocks.find((b): b is SlackBlock & { type: 'header' } => b.type === 'header')
+          const header = blocks.find((b): b is SlackBlock & { type: 'header' } =>
+            b.type === 'header'
+          )
           expect(header?.text.text).toBe('Changes Requested')
         })
 
@@ -185,7 +189,9 @@ describe('NotificationServiceImpl', () => {
           })
           const blocks = service.buildSlackBlocks(notification)
 
-          const header = blocks.find((b): b is SlackBlock & { type: 'header' } => b.type === 'header')
+          const header = blocks.find((b): b is SlackBlock & { type: 'header' } =>
+            b.type === 'header'
+          )
           expect(header?.text.text).toBe('PR Reviewed')
         })
 
@@ -196,7 +202,9 @@ describe('NotificationServiceImpl', () => {
           })
           const blocks = service.buildSlackBlocks(notification)
 
-          const header = blocks.find((b): b is SlackBlock & { type: 'header' } => b.type === 'header')
+          const header = blocks.find((b): b is SlackBlock & { type: 'header' } =>
+            b.type === 'header'
+          )
           expect(header?.text.text).toBe('PR Reviewed')
         })
       })
@@ -210,7 +218,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } => b.type === 'section')
+        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } =>
+          b.type === 'section'
+        )
         const prInfoSection = sections.find(s => s.text?.text?.includes('Add awesome feature'))
         expect(prInfoSection).toBeDefined()
         expect(prInfoSection?.text?.text).toContain('PR #123')
@@ -224,7 +234,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } => b.type === 'section')
+        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } =>
+          b.type === 'section'
+        )
         const commentSection = sections.find(s => s.text?.text?.startsWith('>'))
         expect(commentSection).toBeDefined()
         expect(commentSection?.text?.text).toContain('This is a short comment')
@@ -237,7 +249,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } => b.type === 'section')
+        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } =>
+          b.type === 'section'
+        )
         const commentSection = sections.find(s => s.text?.text?.startsWith('>'))
         expect(commentSection?.text?.text).toContain('...')
         // Should be truncated to ~200 chars for display
@@ -250,7 +264,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } => b.type === 'section')
+        const sections = blocks.filter((b): b is SlackBlock & { type: 'section' } =>
+          b.type === 'section'
+        )
         const commentSection = sections.find(s => s.text?.text?.startsWith('>'))
         expect(commentSection).toBeUndefined()
       })
@@ -264,7 +280,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const context = blocks.find((b): b is SlackBlock & { type: 'context' } => b.type === 'context')
+        const context = blocks.find((b): b is SlackBlock & { type: 'context' } =>
+          b.type === 'context'
+        )
         expect(context).toBeDefined()
         expect(context?.elements).toContainEqual(
           expect.objectContaining({
@@ -281,7 +299,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const context = blocks.find((b): b is SlackBlock & { type: 'context' } => b.type === 'context')
+        const context = blocks.find((b): b is SlackBlock & { type: 'context' } =>
+          b.type === 'context'
+        )
         const repoElement = context?.elements?.find(
           (e): e is { type: 'mrkdwn'; text: string } =>
             e.type === 'mrkdwn' && e.text.includes('octocat/hello-world'),
@@ -299,7 +319,9 @@ describe('NotificationServiceImpl', () => {
         const blocks = service.buildSlackBlocks(notification)
 
         const sectionWithFields = blocks.find(
-          (b): b is SlackBlock & { type: 'section'; fields: Array<{ type: string; text: string }> } =>
+          (
+            b,
+          ): b is SlackBlock & { type: 'section'; fields: Array<{ type: string; text: string }> } =>
             b.type === 'section' && Array.isArray(b.fields),
         )
         expect(sectionWithFields).toBeDefined()
@@ -319,7 +341,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const actions = blocks.find((b): b is SlackBlock & { type: 'actions' } => b.type === 'actions')
+        const actions = blocks.find((b): b is SlackBlock & { type: 'actions' } =>
+          b.type === 'actions'
+        )
         expect(actions).toBeDefined()
         const viewChangesButton = actions?.elements?.find(
           (e): e is { action_id: string; url: string } => e.action_id === 'view_changes',
@@ -333,7 +357,9 @@ describe('NotificationServiceImpl', () => {
         })
         const blocks = service.buildSlackBlocks(notification)
 
-        const actions = blocks.find((b): b is SlackBlock & { type: 'actions' } => b.type === 'actions')
+        const actions = blocks.find((b): b is SlackBlock & { type: 'actions' } =>
+          b.type === 'actions'
+        )
         const openPrButton = actions?.elements?.find(
           (e): e is { action_id: string; url: string; style?: string } => e.action_id === 'open_pr',
         )
