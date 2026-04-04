@@ -52,6 +52,7 @@ export function createTestNotification(overrides?: Partial<Notification>): Notif
     targetWorkspaceId: 'W12345678',
     actorGithubUsername: 'reviewer',
     actorAvatarUrl: 'https://avatars.githubusercontent.com/u/123?v=4',
+    actorIsBot: false, // default to human actor
     prNumber: 42,
     prTitle: 'Add new feature',
     prUrl: 'https://github.com/owner/repo/pull/42',

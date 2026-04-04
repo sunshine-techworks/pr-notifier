@@ -21,6 +21,7 @@ export interface NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -36,6 +37,7 @@ export interface NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -52,6 +54,7 @@ export interface NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -69,6 +72,7 @@ export interface NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string

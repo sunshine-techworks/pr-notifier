@@ -94,6 +94,7 @@ export const notificationSchema = z.object({
   targetWorkspaceId: z.string(),
   actorGithubUsername: z.string(),
   actorAvatarUrl: z.string(),
+  actorIsBot: z.boolean(), // true if sender.type === 'Bot' or login ends with '[bot]'
   prNumber: z.number(),
   prTitle: z.string(),
   prUrl: z.string(),
