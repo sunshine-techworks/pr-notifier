@@ -1,11 +1,13 @@
 import { vi } from 'vitest'
 
 import type { GitHubClient } from '../interfaces/github-client'
+import type { Logger } from '../interfaces/logger'
 import type { NotificationQueue } from '../interfaces/notification-queue'
 import type { NotificationService } from '../interfaces/notification-service'
 import type { SlackClient } from '../interfaces/slack-client'
 import type { UserDao } from '../interfaces/user-dao'
 import type { UserService } from '../interfaces/user-service'
+import type { WebhookProcessor } from '../interfaces/webhook-processor'
 import type { WorkspaceDao } from '../interfaces/workspace-dao'
 
 // --- DAO Mocks ---
@@ -100,6 +102,35 @@ export function createMockNotificationService(): NotificationService {
     createMentionNotification: vi.fn(),
     createCommentNotification: vi.fn(),
   }
+}
+
+/**
+ * Creates a mock WebhookProcessor with all methods as vi.fn().
+ */
+export function createMockWebhookProcessor(): WebhookProcessor {
+  return {
+    processPullRequestEvent: vi.fn(),
+    processPullRequestReviewEvent: vi.fn(),
+    processPullRequestReviewCommentEvent: vi.fn(),
+    processIssueCommentEvent: vi.fn(),
+  }
+}
+
+/**
+ * Creates a mock Logger where child() returns the same mock instance.
+ * This allows chained calls like logger.child({}).info() to work in tests.
+ */
+export function createMockLogger(): Logger {
+  const logger: Logger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn(),
+  }
+  // child() returns the same logger so chained calls work in tests
+  vi.mocked(logger.child).mockReturnValue(logger)
+  return logger
 }
 
 // --- AWS SDK Mocks ---
