@@ -4,6 +4,14 @@ import type { Logger } from '../interfaces/logger'
 import type { NotificationQueue } from '../interfaces/notification-queue'
 import type { NotificationService } from '../interfaces/notification-service'
 import type { UserDao } from '../interfaces/user-dao'
+import {
+  createMockLogger,
+  createMockNotificationQueue,
+  createMockNotificationService,
+  createMockUserDao,
+  createTestNotification,
+  createTestUser,
+} from '../testing/index'
 import type {
   GitHubComment,
   GitHubPullRequest,
@@ -14,14 +22,6 @@ import type {
   PullRequestReviewCommentEvent,
   PullRequestReviewEvent,
 } from '../types/github-webhook.types'
-import {
-  createMockLogger,
-  createMockNotificationQueue,
-  createMockNotificationService,
-  createMockUserDao,
-  createTestNotification,
-  createTestUser,
-} from '../testing/index'
 
 import { extractMentions } from './mention-parser'
 import { WebhookProcessorImpl } from './webhook-processor-impl'
