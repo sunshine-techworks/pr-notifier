@@ -206,8 +206,17 @@ export class WebhookProcessorImpl implements WebhookProcessor {
     log: Logger
   }): Promise<ProcessingResult> {
     const {
-      sender, comment, prAuthorLogin, prNumber, prTitle, prUrl,
-      repository, headRef, baseRef, eventType, log,
+      sender,
+      comment,
+      prAuthorLogin,
+      prNumber,
+      prTitle,
+      prUrl,
+      repository,
+      headRef,
+      baseRef,
+      eventType,
+      log,
     } = params
 
     const commonParams = {
