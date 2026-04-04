@@ -109,6 +109,7 @@ export class NotificationServiceImpl implements NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -123,6 +124,7 @@ export class NotificationServiceImpl implements NotificationService {
       targetWorkspaceId: params.targetUser.slackWorkspaceId,
       actorGithubUsername: params.actorGithubUsername,
       actorAvatarUrl: params.actorAvatarUrl,
+      actorIsBot: params.actorIsBot,
       prNumber: params.prNumber,
       prTitle: params.prTitle,
       prUrl: params.prUrl,
@@ -137,6 +139,7 @@ export class NotificationServiceImpl implements NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -152,6 +155,7 @@ export class NotificationServiceImpl implements NotificationService {
       targetWorkspaceId: params.targetUser.slackWorkspaceId,
       actorGithubUsername: params.actorGithubUsername,
       actorAvatarUrl: params.actorAvatarUrl,
+      actorIsBot: params.actorIsBot,
       prNumber: params.prNumber,
       prTitle: params.prTitle,
       prUrl: params.prUrl,
@@ -167,6 +171,7 @@ export class NotificationServiceImpl implements NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -183,6 +188,7 @@ export class NotificationServiceImpl implements NotificationService {
       targetWorkspaceId: params.targetUser.slackWorkspaceId,
       actorGithubUsername: params.actorGithubUsername,
       actorAvatarUrl: params.actorAvatarUrl,
+      actorIsBot: params.actorIsBot,
       prNumber: params.prNumber,
       prTitle: params.prTitle,
       prUrl: params.prUrl,
@@ -199,6 +205,7 @@ export class NotificationServiceImpl implements NotificationService {
     targetUser: User
     actorGithubUsername: string
     actorAvatarUrl: string
+    actorIsBot: boolean
     prNumber: number
     prTitle: string
     prUrl: string
@@ -215,6 +222,7 @@ export class NotificationServiceImpl implements NotificationService {
       targetWorkspaceId: params.targetUser.slackWorkspaceId,
       actorGithubUsername: params.actorGithubUsername,
       actorAvatarUrl: params.actorAvatarUrl,
+      actorIsBot: params.actorIsBot,
       prNumber: params.prNumber,
       prTitle: params.prTitle,
       prUrl: params.prUrl,

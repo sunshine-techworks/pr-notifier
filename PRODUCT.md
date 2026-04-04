@@ -48,10 +48,10 @@ Users configure which notifications they receive via slash command or app home.
 
 ### 3. Bot vs Human Comment Filtering
 
-Distinguishes between human developers and bots:
+Distinguishes between human developers and bots using GitHub's API:
 
-- Known bots: `dependabot`, `renovate`, `codecov`, `github-actions[bot]`, etc.
-- AI bots: Detected via `[bot]` suffix or known AI assistant usernames
+- GitHub webhook payloads include `sender.type` field (`User`, `Bot`, or `Organization`)
+- Fallback: usernames ending in `[bot]` suffix
 - Users can toggle bot notifications independently
 
 ### 4. Rich Slack Notifications

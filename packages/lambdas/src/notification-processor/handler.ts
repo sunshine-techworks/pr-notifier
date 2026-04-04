@@ -60,9 +60,7 @@ async function processRecord(record: SQSRecord): Promise<void> {
   }
 
   // Check if user wants this type of notification
-  // TODO: Determine if actor is a bot
-  const isBot = false
-  if (!notificationService.shouldNotify(user, notification.type, isBot)) {
+  if (!notificationService.shouldNotify(user, notification.type, notification.actorIsBot)) {
     console.log(`User ${user.slackUserId} has disabled ${notification.type} notifications`)
     return
   }
