@@ -9,6 +9,7 @@ export type {
   GitHubUserValidationResult,
   GitHubUserValidationSuccess,
 } from './github-client'
+export type { Logger } from './logger'
 export type { NotificationQueue } from './notification-queue'
 export type { SlackClient } from './slack-client'
 
@@ -20,3 +21,4 @@ export type {
   LinkAccountSuccess,
   UserService,
 } from './user-service'
+export type { ProcessingResult, SkippedNotification, WebhookProcessor } from './webhook-processor'
