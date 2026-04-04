@@ -1,3 +1,4 @@
 export { GitHubClientImpl } from './github-client-impl'
 export { NotificationQueueImpl } from './notification-queue-impl'
+export { PinoLogger } from './pino-logger'
 export { SlackClientImpl } from './slack-client-impl'
