@@ -41,14 +41,17 @@ export {
 // Slack types
 export {
   type SlackActionsBlock,
+  type SlackAppHomeView,
   type SlackBlock,
   type SlackButtonElement,
+  type SlackCheckboxElement,
   type SlackContextBlock,
   type SlackDividerBlock,
   type SlackHeaderBlock,
   type SlackImageElement,
   type SlackMessage,
   type SlackMessageResponse,
+  type SlackOption,
   type SlackSectionBlock,
   type SlackTextObject,
 } from './slack.types'
