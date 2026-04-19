@@ -22,6 +22,15 @@ export interface SlackImageElement {
 }
 
 /**
+ * Option object used in checkbox groups and select menus
+ */
+export interface SlackOption {
+  text: SlackTextObject
+  value: string
+  description?: SlackTextObject
+}
+
+/**
  * Button element for action blocks
  */
 export interface SlackButtonElement {
@@ -30,6 +39,17 @@ export interface SlackButtonElement {
   action_id: string
   url?: string
   style?: 'primary' | 'danger'
+}
+
+/**
+ * Checkbox group element for action blocks.
+ * initial_options controls which checkboxes are pre-selected.
+ */
+export interface SlackCheckboxElement {
+  type: 'checkboxes'
+  action_id: string
+  options: SlackOption[]
+  initial_options?: SlackOption[]
 }
 
 /**
@@ -66,11 +86,11 @@ export interface SlackDividerBlock {
 }
 
 /**
- * Actions block
+ * Actions block — supports buttons and checkbox groups
  */
 export interface SlackActionsBlock {
   type: 'actions'
-  elements: SlackButtonElement[]
+  elements: Array<SlackButtonElement | SlackCheckboxElement>
 }
 
 /**
@@ -103,4 +123,13 @@ export interface SlackMessageResponse {
   channel?: string
   ts?: string
   error?: string
+}
+
+/**
+ * App Home view published via views.publish.
+ * Structurally different from SlackMessage — views have no channel or fallback text.
+ */
+export interface SlackAppHomeView {
+  type: 'home'
+  blocks: SlackBlock[]
 }
