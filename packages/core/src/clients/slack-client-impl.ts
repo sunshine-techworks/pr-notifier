@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { WebClient } from '@slack/web-api'
 
 import type { SlackClient } from '../interfaces/index'
-import type { SlackMessage, SlackMessageResponse } from '../types/index'
+import type { SlackAppHomeView, SlackMessage, SlackMessageResponse } from '../types/index'
 
 /**
  * Slack Web API implementation of SlackClient
@@ -122,6 +122,26 @@ export class SlackClientImpl implements SlackClient {
       }
     } catch {
       return null
+    }
+  }
+
+  async publishAppHome(
+    userId: string,
+    view: SlackAppHomeView,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const result = await this.client.views.publish({
+        user_id: userId,
+        view: {
+          type: view.type,
+          blocks: view.blocks,
+        },
+      })
+
+      return { ok: result.ok ?? false }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return { ok: false, error: errorMessage }
     }
   }
 

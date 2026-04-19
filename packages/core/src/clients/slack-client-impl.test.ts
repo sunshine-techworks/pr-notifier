@@ -20,12 +20,16 @@ interface MockWebClientMethods {
   users: {
     info: ReturnType<typeof vi.fn>
   }
+  views: {
+    publish: ReturnType<typeof vi.fn>
+  }
 }
 
 // Create mock methods that we can reference in tests
 const mockChatPostMessage = vi.fn()
 const mockChatUpdate = vi.fn()
 const mockUsersInfo = vi.fn()
+const mockViewsPublish = vi.fn()
 
 // Mock the @slack/web-api module
 vi.mock('@slack/web-api', () => {
@@ -37,6 +41,9 @@ vi.mock('@slack/web-api', () => {
       },
       users: {
         info: mockUsersInfo,
+      },
+      views: {
+        publish: mockViewsPublish,
       },
     })),
   }
@@ -381,6 +388,42 @@ describe('SlackClientImpl', () => {
       const result = client.verifySignature(signature, timestamp, body)
 
       expect(result).toBe(true)
+    })
+  })
+
+  describe('publishAppHome', () => {
+    it('publishes view with correct user_id and view structure', async () => {
+      mockViewsPublish.mockResolvedValue({ ok: true })
+
+      const view = {
+        type: 'home' as const,
+        blocks: [{ type: 'header' as const, text: { type: 'plain_text' as const, text: 'Test' } }],
+      }
+
+      const result = await client.publishAppHome('U12345678', view)
+
+      expect(result.ok).toBe(true)
+      expect(mockViewsPublish).toHaveBeenCalledWith({
+        user_id: 'U12345678',
+        view: {
+          type: 'home',
+          blocks: view.blocks,
+        },
+      })
+    })
+
+    it('returns error when views.publish API throws', async () => {
+      mockViewsPublish.mockRejectedValue(new Error('invalid_auth'))
+
+      const view = {
+        type: 'home' as const,
+        blocks: [],
+      }
+
+      const result = await client.publishAppHome('U12345678', view)
+
+      expect(result.ok).toBe(false)
+      expect(result.error).toBe('invalid_auth')
     })
   })
 })
