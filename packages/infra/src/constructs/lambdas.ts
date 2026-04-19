@@ -133,7 +133,7 @@ export class LambdasConstruct extends cdk.NestedStack {
     // Slack commands needs read/write to users for linking accounts
     props.usersTable.grantReadWriteData(this.slackCommandsLambda)
 
-    // Slack events needs read access to users for app home
-    props.usersTable.grantReadData(this.slackEventsLambda)
+    // Slack events needs read/write to users for preferences and unlinking
+    props.usersTable.grantReadWriteData(this.slackEventsLambda)
   }
 }
