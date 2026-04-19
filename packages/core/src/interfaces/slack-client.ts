@@ -1,4 +1,4 @@
-import type { SlackMessage, SlackMessageResponse } from '../types/index'
+import type { SlackAppHomeView, SlackMessage, SlackMessageResponse } from '../types/index'
 
 /**
  * Client interface for Slack API interactions
@@ -41,6 +41,14 @@ export interface SlackClient {
       timezone?: string
     } | null
   >
+
+  /**
+   * Publish or update the App Home tab for a user
+   */
+  publishAppHome(
+    userId: string,
+    view: SlackAppHomeView,
+  ): Promise<{ ok: boolean; error?: string }>
 
   /**
    * Verify a Slack request signature

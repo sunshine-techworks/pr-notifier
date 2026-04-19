@@ -60,6 +60,7 @@ export function createMockSlackClient(): SlackClient {
     sendChannelMessage: vi.fn(),
     updateMessage: vi.fn(),
     getUserInfo: vi.fn(),
+    publishAppHome: vi.fn(),
     verifySignature: vi.fn(),
   }
 }
