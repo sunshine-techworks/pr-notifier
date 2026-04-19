@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { createTestUser } from '../testing/index'
-import type { SlackActionsBlock, SlackBlock, SlackCheckboxElement, SlackOption, SlackSectionBlock } from '../types/index'
+import type {
+  SlackBlock,
+  SlackCheckboxElement,
+  SlackOption,
+  SlackSectionBlock,
+} from '../types/index'
 
 import { buildAppHomeBlocks } from './app-home-builder'
 

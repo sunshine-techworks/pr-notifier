@@ -123,7 +123,8 @@ function handlePrefsCommand(): APIGatewayProxyResult {
     statusCode: 200,
     body: JSON.stringify({
       response_type: 'ephemeral',
-      text: 'Head to the *App Home* tab to manage your notification preferences.\nClick on the PR Notify app name in the sidebar, then select the Home tab.',
+      text:
+        'Head to the *App Home* tab to manage your notification preferences.\nClick on the PR Notify app name in the sidebar, then select the Home tab.',
     }),
   }
 }
