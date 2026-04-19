@@ -5,12 +5,34 @@ import type { SlackBlock, SlackOption } from '../types/slack.types'
  * Maps preference keys to human-readable labels shown in the checkbox group.
  * Order here determines the display order in the App Home.
  */
-const PREFERENCE_LABELS: ReadonlyArray<{ key: keyof NotificationPreferences; label: string; description: string }> = [
-  { key: 'reviewRequests', label: 'Review requests', description: 'Someone requests your review on a PR' },
-  { key: 'reviewsOnMyPrs', label: 'Reviews on my PRs', description: 'Someone approves, comments, or requests changes' },
-  { key: 'commentsFromHumans', label: 'Comments from humans', description: 'Human comments on PRs you authored' },
-  { key: 'commentsFromBots', label: 'Comments from bots', description: 'Bot comments (CI, coverage, linting)' },
-  { key: 'mentions', label: '@mentions', description: 'You are mentioned in a PR description or comment' },
+const PREFERENCE_LABELS: ReadonlyArray<
+  { key: keyof NotificationPreferences; label: string; description: string }
+> = [
+  {
+    key: 'reviewRequests',
+    label: 'Review requests',
+    description: 'Someone requests your review on a PR',
+  },
+  {
+    key: 'reviewsOnMyPrs',
+    label: 'Reviews on my PRs',
+    description: 'Someone approves, comments, or requests changes',
+  },
+  {
+    key: 'commentsFromHumans',
+    label: 'Comments from humans',
+    description: 'Human comments on PRs you authored',
+  },
+  {
+    key: 'commentsFromBots',
+    label: 'Comments from bots',
+    description: 'Bot comments (CI, coverage, linting)',
+  },
+  {
+    key: 'mentions',
+    label: '@mentions',
+    description: 'You are mentioned in a PR description or comment',
+  },
   { key: 'ciFailures', label: 'CI failures', description: 'CI/checks fail on PRs you authored' },
 ]
 
@@ -68,7 +90,7 @@ export function buildAppHomeBlocks(user: User | null): SlackBlock[] {
   )
 
   // Build checkbox options from the preference labels
-  const allOptions: SlackOption[] = PREFERENCE_LABELS.map(({ key, label, description }) => ({
+  const allOptions = PREFERENCE_LABELS.map(({ key, label, description }): SlackOption => ({
     text: { type: 'mrkdwn', text: `*${label}*` },
     description: { type: 'mrkdwn', text: description },
     value: key,
@@ -77,7 +99,7 @@ export function buildAppHomeBlocks(user: User | null): SlackBlock[] {
   // Only include options where the user has the preference enabled
   const initialOptions = PREFERENCE_LABELS
     .filter(({ key }) => user.preferences[key])
-    .map(({ key, label, description }) => ({
+    .map(({ key, label, description }): SlackOption => ({
       text: { type: 'mrkdwn', text: `*${label}*` },
       description: { type: 'mrkdwn', text: description },
       value: key,
