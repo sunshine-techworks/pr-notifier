@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --esm src/app.ts",
+  "app": "npx tsx src/app.ts",
   "watch": {
     "include": ["**"],
     "exclude": [
