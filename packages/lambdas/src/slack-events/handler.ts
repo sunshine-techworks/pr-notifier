@@ -3,7 +3,7 @@ import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import {
   buildAppHomeBlocks,
   GitHubClientImpl,
-  PinoLogger,
+  ConsoleLogger,
   SlackClientImpl,
   UserDaoImpl,
   UserServiceImpl,
@@ -23,7 +23,7 @@ const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
 const githubClient = new GitHubClientImpl(GITHUB_TOKEN)
 const userService = new UserServiceImpl(userDao, githubClient)
 const slackClient = new SlackClientImpl(SLACK_BOT_TOKEN, SLACK_SIGNING_SECRET)
-const logger = new PinoLogger()
+const logger = new ConsoleLogger()
 
 /** Type guard for safely accessing untyped payload fields */
 const isRecord = (val: unknown): val is Record<string, unknown> =>

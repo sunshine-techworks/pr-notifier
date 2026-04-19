@@ -5,7 +5,7 @@ import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import {
   NotificationQueueImpl,
   NotificationServiceImpl,
-  PinoLogger,
+  ConsoleLogger,
   UserDaoImpl,
   WebhookProcessorImpl,
 } from '@pr-notify/core'
@@ -22,7 +22,7 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient)
 const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
 const notificationService = new NotificationServiceImpl()
 const notificationQueue = new NotificationQueueImpl(NOTIFICATION_QUEUE_URL)
-const logger = new PinoLogger()
+const logger = new ConsoleLogger()
 const webhookProcessor = new WebhookProcessorImpl(
   userDao,
   notificationService,
