@@ -55,7 +55,7 @@ export async function handler(
       case 'link':
         return handleLinkCommand(userId, teamId, args)
       case 'prefs':
-        return handlePrefsCommand(userId)
+        return handlePrefsCommand()
       case 'help':
       default:
         return handleHelpCommand()
@@ -114,32 +114,16 @@ async function handleLinkCommand(
   }
 }
 
-async function handlePrefsCommand(
-  userId: string,
-): Promise<APIGatewayProxyResult> {
-  const user = await userService.getBySlackId(userId)
-
-  if (!user) {
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        response_type: 'ephemeral',
-        text:
-          "You haven't linked your GitHub account yet. Use `/pr-notify link <github-username>` first.",
-      }),
-    }
-  }
-
-  // TODO: Open a modal with preferences settings
-  const prefsText = Object.entries(user.preferences)
-    .map(([key, value]) => `• ${key}: ${value ? 'ON' : 'OFF'}`)
-    .join('\n')
-
+/**
+ * Directs users to the App Home tab where preferences are managed.
+ * Keeps preferences in a single canonical location to avoid sync issues.
+ */
+function handlePrefsCommand(): APIGatewayProxyResult {
   return {
     statusCode: 200,
     body: JSON.stringify({
       response_type: 'ephemeral',
-      text: `*Your notification preferences:*\n${prefsText}`,
+      text: 'Head to the *App Home* tab to manage your notification preferences.\nClick on the PR Notify app name in the sidebar, then select the Home tab.',
     }),
   }
 }
