@@ -61,6 +61,9 @@ export class LambdasConstruct extends cdk.NestedStack {
       externalModules: ['@aws-sdk/*'],
       // Enable tree-shaking for smaller bundles
       mainFields: ['module', 'main'],
+      // Shim CJS require() for dependencies like @slack/web-api that use
+      // dynamic require('node:...') internally, which breaks in ESM bundles
+      banner: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
     }
 
     // Webhook Ingest Lambda
