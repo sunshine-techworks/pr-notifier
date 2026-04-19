@@ -163,10 +163,14 @@ export class SlackClientImpl implements SlackClient {
         .update(sigBaseString)
         .digest('hex')
 
-    // Compare signatures using timing-safe comparison
-    return timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature),
-    )
+    // Compare signatures using timing-safe comparison.
+    // Guard against length mismatch which would throw — different lengths
+    // means the signature is invalid anyway.
+    const sigBuffer = Buffer.from(signature)
+    const expectedBuffer = Buffer.from(expectedSignature)
+    if (sigBuffer.length !== expectedBuffer.length) {
+      return false
+    }
+    return timingSafeEqual(sigBuffer, expectedBuffer)
   }
 }
