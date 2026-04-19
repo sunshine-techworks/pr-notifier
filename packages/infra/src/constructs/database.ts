@@ -3,8 +3,8 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb'
 import type { Construct } from 'constructs'
 
 /**
- * Database construct for PR Notify
- * Creates DynamoDB tables with single-table design patterns
+ * Database construct for PR Notify.
+ * Uses single-table design with composite keys (PK/SK) and GSIs
  */
 export class DatabaseConstruct extends cdk.NestedStack {
   public readonly usersTable: dynamodb.Table
@@ -13,46 +13,53 @@ export class DatabaseConstruct extends cdk.NestedStack {
   constructor(scope: Construct, id: string) {
     super(scope, id)
 
-    // Users table with GSIs for efficient lookups by different access patterns
-    // Primary key: slackUserId (partition key)
-    // GSI1: githubUsername for reverse lookups from GitHub webhooks
-    // GSI2: workspaceId for listing users in a workspace
+    // Users table using single-table design with composite keys.
+    // PK: SLACK_USER#{slackUserId}, SK: SLACK_USER#{slackUserId}
+    // GSI1: GITHUB#{githubUsername} for reverse lookups from webhooks
+    // GSI2: WORKSPACE#{workspaceId} for listing users per workspace
     this.usersTable = new dynamodb.Table(this, 'UsersTable', {
       tableName: 'pr-notify-users',
       partitionKey: {
-        name: 'slackUserId',
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      // Enable point-in-time recovery for data protection
-      pointInTimeRecovery: true,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     })
 
-    // GSI for looking up users by their GitHub username
-    // Used when processing webhooks to find the Slack user to notify
+    // GSI1: Look up users by GitHub username (used by WebhookProcessor
+    // to find the Slack user to notify from a GitHub webhook event)
     this.usersTable.addGlobalSecondaryIndex({
-      indexName: 'gsi-github-username',
+      indexName: 'GSI1',
       partitionKey: {
-        name: 'githubUsername',
+        name: 'GSI1PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'GSI1SK',
         type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL,
     })
 
-    // GSI for listing all users in a workspace
-    // Used for workspace-level operations and billing/limits
+    // GSI2: List users by workspace (used for workspace-level
+    // operations, user counts, and billing/limits)
     this.usersTable.addGlobalSecondaryIndex({
-      indexName: 'gsi-workspace-id',
+      indexName: 'GSI2',
       partitionKey: {
-        name: 'workspaceId',
+        name: 'GSI2PK',
         type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL,
     })
 
-    // Workspaces table for Slack workspace configuration
-    // Stores installation data, bot tokens, and workspace-level settings
+    // Workspaces table for Slack workspace configuration.
+    // Stores installation data and workspace-level settings.
     this.workspacesTable = new dynamodb.Table(this, 'WorkspacesTable', {
       tableName: 'pr-notify-workspaces',
       partitionKey: {
@@ -60,7 +67,7 @@ export class DatabaseConstruct extends cdk.NestedStack {
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      pointInTimeRecovery: true,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     })
   }
