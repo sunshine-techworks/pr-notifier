@@ -7,6 +7,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources'
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs'
 import * as sqs from 'aws-cdk-lib/aws-sqs'
+import * as ssm from 'aws-cdk-lib/aws-ssm'
 import type { Construct } from 'constructs'
 
 // ESM equivalent of __dirname
@@ -32,19 +33,31 @@ export class LambdasConstruct extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: LambdasConstructProps) {
     super(scope, id)
 
+    // Resolve secrets from SSM Parameter Store at deploy time
+    const slackBotToken = ssm.StringParameter.fromStringParameterName(
+      this, 'SlackBotTokenParam', '/pr-notify/slack-bot-token',
+    )
+    const slackSigningSecret = ssm.StringParameter.fromStringParameterName(
+      this, 'SlackSigningSecretParam', '/pr-notify/slack-signing-secret',
+    )
+    const githubWebhookSecret = ssm.StringParameter.fromStringParameterName(
+      this, 'GitHubWebhookSecretParam', '/pr-notify/github-webhook-secret',
+    )
+
     // Shared Lambda configuration
     const sharedConfig = {
       runtime: lambda.Runtime.NODEJS_22_X,
       architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
-      // Environment variables available to all Lambdas
-      // Secrets should be stored in SSM Parameter Store or Secrets Manager
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
         USERS_TABLE_NAME: props.usersTable.tableName,
         WORKSPACES_TABLE_NAME: props.workspacesTable.tableName,
         NOTIFICATION_QUEUE_URL: props.notificationQueue.queueUrl,
+        SLACK_BOT_TOKEN: slackBotToken.stringValue,
+        SLACK_SIGNING_SECRET: slackSigningSecret.stringValue,
+        GITHUB_WEBHOOK_SECRET: githubWebhookSecret.stringValue,
       },
     }
 
