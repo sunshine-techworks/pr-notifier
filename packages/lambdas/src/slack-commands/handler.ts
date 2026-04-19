@@ -26,9 +26,14 @@ export async function handler(
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> {
   try {
-    // Verify Slack signature
-    const signature = event.headers['x-slack-signature'] ?? ''
-    const timestamp = event.headers['x-slack-request-timestamp'] ?? ''
+    // Verify Slack signature.
+    // API Gateway REST API preserves header casing, so we need case-insensitive lookup
+    // since Slack sends X-Slack-Signature (mixed case).
+    const headers = Object.fromEntries(
+      Object.entries(event.headers).map(([k, v]) => [k.toLowerCase(), v]),
+    )
+    const signature = headers['x-slack-signature'] ?? ''
+    const timestamp = headers['x-slack-request-timestamp'] ?? ''
     const body = event.body ?? ''
 
     if (!slackClient.verifySignature(signature, timestamp, body)) {

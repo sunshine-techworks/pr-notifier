@@ -39,8 +39,12 @@ export async function handler(
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> {
   try {
-    // Validate webhook signature
-    const signature = event.headers['x-hub-signature-256'] ?? ''
+    // Validate webhook signature.
+    // API Gateway REST API preserves header casing, so we need case-insensitive lookup.
+    const headers = Object.fromEntries(
+      Object.entries(event.headers).map(([k, v]) => [k.toLowerCase(), v]),
+    )
+    const signature = headers['x-hub-signature-256'] ?? ''
     const body = event.body ?? ''
 
     if (!verifyGitHubSignature(signature, body, GITHUB_WEBHOOK_SECRET)) {
@@ -52,7 +56,7 @@ export async function handler(
     }
 
     // Parse event type from headers
-    const eventType = event.headers['x-github-event']
+    const eventType = headers['x-github-event']
     if (!eventType) {
       return {
         statusCode: 400,
