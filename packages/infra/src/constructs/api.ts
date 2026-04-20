@@ -7,6 +7,7 @@ export interface ApiConstructProps {
   webhookIngestLambda: lambda.Function
   slackCommandsLambda: lambda.Function
   slackEventsLambda: lambda.Function
+  slackOAuthLambda: lambda.Function
 }
 
 /**
@@ -81,6 +82,27 @@ export class ApiConstruct extends cdk.NestedStack {
       }),
     )
 
+    // OAuth endpoints for workspace installation
+    // GET /slack/oauth/authorize - redirects to Slack's authorization page
+    // GET /slack/oauth/callback - handles the redirect from Slack after authorization
+    const slackOAuthResource = slackResource.addResource('oauth')
+
+    const slackOAuthAuthorizeResource = slackOAuthResource.addResource('authorize')
+    slackOAuthAuthorizeResource.addMethod(
+      'GET',
+      new apigateway.LambdaIntegration(props.slackOAuthLambda, {
+        proxy: true,
+      }),
+    )
+
+    const slackOAuthCallbackResource = slackOAuthResource.addResource('callback')
+    slackOAuthCallbackResource.addMethod(
+      'GET',
+      new apigateway.LambdaIntegration(props.slackOAuthLambda, {
+        proxy: true,
+      }),
+    )
+
     // Output the API endpoint URLs
     new cdk.CfnOutput(this, 'ApiEndpoint', {
       value: this.api.url,
@@ -100,6 +122,16 @@ export class ApiConstruct extends cdk.NestedStack {
     new cdk.CfnOutput(this, 'SlackEventsUrl', {
       value: `${this.api.url}slack/events`,
       description: 'URL to configure in Slack App Event Subscriptions',
+    })
+
+    new cdk.CfnOutput(this, 'SlackOAuthAuthorizeUrl', {
+      value: `${this.api.url}slack/oauth/authorize`,
+      description: 'URL for "Add to Slack" button',
+    })
+
+    new cdk.CfnOutput(this, 'SlackOAuthCallbackUrl', {
+      value: `${this.api.url}slack/oauth/callback`,
+      description: 'URL to configure as OAuth Redirect URL in Slack App',
     })
   }
 }
