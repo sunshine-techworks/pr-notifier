@@ -12,6 +12,7 @@ export type {
 export type { Logger } from './logger'
 export type { NotificationQueue } from './notification-queue'
 export type { SlackClient } from './slack-client'
+export type { SlackClientFactory } from './slack-client-factory'
 
 // Service interfaces
 export type { NotificationService } from './notification-service'
