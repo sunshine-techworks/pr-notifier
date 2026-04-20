@@ -32,6 +32,7 @@ export class PrNotifyStack extends cdk.Stack {
       webhookIngestLambda: lambdas.webhookIngestLambda,
       slackCommandsLambda: lambdas.slackCommandsLambda,
       slackEventsLambda: lambdas.slackEventsLambda,
+      slackOAuthLambda: lambdas.slackOAuthLambda,
     })
 
     // Stack outputs for external reference

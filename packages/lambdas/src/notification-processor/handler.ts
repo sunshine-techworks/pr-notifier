@@ -1,42 +1,52 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import {
+  ConsoleLogger,
   type Notification,
   NotificationServiceImpl,
-  SlackClientImpl,
+  SlackClientFactoryImpl,
   UserDaoImpl,
+  WorkspaceDaoImpl,
+  WorkspaceServiceImpl,
 } from '@pr-notify/core'
 import type { SQSEvent, SQSRecord } from 'aws-lambda'
 
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
-const SLACK_BOT_TOKEN = process.env['SLACK_BOT_TOKEN'] ?? ''
+const WORKSPACES_TABLE_NAME = process.env['WORKSPACES_TABLE_NAME'] ?? ''
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
+// Fallback token for backward compatibility during migration
+const SLACK_BOT_TOKEN = process.env['SLACK_BOT_TOKEN'] ?? ''
 
-// Initialize clients
 const dynamoClient = new DynamoDBClient({})
 const docClient = DynamoDBDocumentClient.from(dynamoClient)
 
 const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
+const workspaceDao = new WorkspaceDaoImpl(docClient, WORKSPACES_TABLE_NAME)
+const workspaceService = new WorkspaceServiceImpl(workspaceDao)
 const notificationService = new NotificationServiceImpl()
-const slackClient = new SlackClientImpl(SLACK_BOT_TOKEN, SLACK_SIGNING_SECRET)
+const slackClientFactory = new SlackClientFactoryImpl(
+  workspaceService,
+  SLACK_SIGNING_SECRET,
+  SLACK_BOT_TOKEN || undefined,
+)
+const logger = new ConsoleLogger()
 
 /**
- * Lambda handler for processing notifications from SQS
- * Looks up user, checks preferences, and sends Slack DM
+ * Lambda handler for processing notifications from SQS.
+ * Looks up user, checks preferences, resolves the workspace-specific
+ * Slack client, and sends the DM.
  */
 export async function handler(event: SQSEvent): Promise<void> {
   const results = await Promise.allSettled(
     event.Records.map(processRecord),
   )
 
-  // Log any failures
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
-      console.error(`Failed to process record ${index}:`, result.reason)
+      logger.error(`Failed to process record ${index}`, { error: result.reason })
     }
   })
 
-  // If any records failed, throw to trigger retry
   const failures = results.filter((r) => r.status === 'rejected')
   if (failures.length > 0) {
     throw new Error(`Failed to process ${failures.length} records`)
@@ -46,26 +56,30 @@ export async function handler(event: SQSEvent): Promise<void> {
 async function processRecord(record: SQSRecord): Promise<void> {
   const notification: Notification = JSON.parse(record.body)
 
-  console.log('Processing notification:', {
+  logger.info('Processing notification', {
     id: notification.id,
     type: notification.type,
     targetSlackUserId: notification.targetSlackUserId,
+    targetWorkspaceId: notification.targetWorkspaceId,
   })
 
-  // Look up user
   const user = await userDao.findById(notification.targetSlackUserId)
   if (!user) {
-    console.log(`User not found: ${notification.targetSlackUserId}, skipping`)
+    logger.info('User not found, skipping', { userId: notification.targetSlackUserId })
     return
   }
 
-  // Check if user wants this type of notification
   if (!notificationService.shouldNotify(user, notification.type, notification.actorIsBot)) {
-    console.log(`User ${user.slackUserId} has disabled ${notification.type} notifications`)
+    logger.info('Notification disabled by user preferences', {
+      userId: user.slackUserId,
+      type: notification.type,
+    })
     return
   }
 
-  // Build and send Slack message
+  // Resolve workspace-specific Slack client using the notification's target workspace
+  const slackClient = await slackClientFactory.getClientForWorkspace(notification.targetWorkspaceId)
+
   const blocks = notificationService.buildSlackBlocks(notification)
   const result = await slackClient.sendDirectMessage(user.slackUserId, {
     channel: user.slackUserId,
@@ -77,7 +91,7 @@ async function processRecord(record: SQSRecord): Promise<void> {
     throw new Error(`Failed to send Slack message: ${result.error}`)
   }
 
-  console.log('Notification sent successfully:', {
+  logger.info('Notification sent', {
     notificationId: notification.id,
     slackTs: result.ts,
   })

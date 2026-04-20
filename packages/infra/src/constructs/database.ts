@@ -58,12 +58,17 @@ export class DatabaseConstruct extends cdk.NestedStack {
       projectionType: dynamodb.ProjectionType.ALL,
     })
 
-    // Workspaces table for Slack workspace configuration.
-    // Stores installation data and workspace-level settings.
+    // Workspaces table using single-table design with composite keys.
+    // PK: WORKSPACE#{slackWorkspaceId}, SK: WORKSPACE#{slackWorkspaceId}
+    // Stores installation data, bot tokens, and workspace-level settings.
     this.workspacesTable = new dynamodb.Table(this, 'WorkspacesTable', {
       tableName: 'pr-notify-workspaces',
       partitionKey: {
-        name: 'workspaceId',
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,

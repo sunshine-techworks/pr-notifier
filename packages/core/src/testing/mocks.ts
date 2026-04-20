@@ -4,11 +4,14 @@ import type { GitHubClient } from '../interfaces/github-client'
 import type { Logger } from '../interfaces/logger'
 import type { NotificationQueue } from '../interfaces/notification-queue'
 import type { NotificationService } from '../interfaces/notification-service'
+import type { OAuthService } from '../interfaces/oauth-service'
 import type { SlackClient } from '../interfaces/slack-client'
+import type { SlackClientFactory } from '../interfaces/slack-client-factory'
 import type { UserDao } from '../interfaces/user-dao'
 import type { UserService } from '../interfaces/user-service'
 import type { WebhookProcessor } from '../interfaces/webhook-processor'
 import type { WorkspaceDao } from '../interfaces/workspace-dao'
+import type { WorkspaceService } from '../interfaces/workspace-service'
 
 // --- DAO Mocks ---
 
@@ -40,7 +43,37 @@ export function createMockWorkspaceDao(): WorkspaceDao {
   }
 }
 
+/**
+ * Creates a mock WorkspaceService with all methods as vi.fn().
+ */
+export function createMockWorkspaceService(): WorkspaceService {
+  return {
+    getById: vi.fn(),
+    registerInstallation: vi.fn(),
+    removeInstallation: vi.fn(),
+  }
+}
+
 // --- Client Mocks ---
+
+/**
+ * Creates a mock OAuthService with all methods as vi.fn().
+ */
+export function createMockOAuthService(): OAuthService {
+  return {
+    getAuthorizationUrl: vi.fn(),
+    exchangeCodeForToken: vi.fn(),
+  }
+}
+
+/**
+ * Creates a mock SlackClientFactory with getClientForWorkspace as vi.fn().
+ */
+export function createMockSlackClientFactory(): SlackClientFactory {
+  return {
+    getClientForWorkspace: vi.fn(),
+  }
+}
 
 /**
  * Creates a mock GitHubClient with all methods as vi.fn().

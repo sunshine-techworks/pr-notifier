@@ -1,22 +1,23 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
-import { GitHubClientImpl, SlackClientImpl, UserDaoImpl, UserServiceImpl } from '@pr-notify/core'
+import {
+  GitHubClientImpl,
+  UserDaoImpl,
+  UserServiceImpl,
+  verifySlackSignature,
+} from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
-const SLACK_BOT_TOKEN = process.env['SLACK_BOT_TOKEN'] ?? ''
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
-// Optional: GitHub token for higher API rate limits (5000/hr vs 60/hr)
 const GITHUB_TOKEN = process.env['GITHUB_TOKEN']
 
-// Initialize clients
 const dynamoClient = new DynamoDBClient({})
 const docClient = DynamoDBDocumentClient.from(dynamoClient)
 
 const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
 const githubClient = new GitHubClientImpl(GITHUB_TOKEN)
 const userService = new UserServiceImpl(userDao, githubClient)
-const slackClient = new SlackClientImpl(SLACK_BOT_TOKEN, SLACK_SIGNING_SECRET)
 
 /**
  * Lambda handler for Slack slash commands
@@ -36,7 +37,7 @@ export async function handler(
     const timestamp = headers['x-slack-request-timestamp'] ?? ''
     const body = event.body ?? ''
 
-    if (!slackClient.verifySignature(signature, timestamp, body)) {
+    if (!verifySlackSignature(SLACK_SIGNING_SECRET, signature, timestamp, body)) {
       console.error('Invalid Slack signature')
       return {
         statusCode: 401,

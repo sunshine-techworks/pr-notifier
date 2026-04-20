@@ -60,6 +60,9 @@ export const workspaceSchema = z.object({
   slackWorkspaceId: z.string(),
   name: z.string(),
   tier: workspaceTierSchema,
+  // Per-workspace bot token from OAuth installation.
+  // Optional during migration from single hardcoded token.
+  slackBotToken: z.string().optional(),
   stripeCustomerId: z.string().optional(),
   stripeSubscriptionId: z.string().optional(),
   userCount: z.number(),

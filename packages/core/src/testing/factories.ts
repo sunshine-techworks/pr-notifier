@@ -33,6 +33,7 @@ export function createTestWorkspace(overrides?: Partial<Workspace>): Workspace {
     slackWorkspaceId: 'W12345678',
     name: 'Test Workspace',
     tier: 'free',
+    slackBotToken: 'xoxb-test-token-12345',
     userCount: 0,
     installedAt: new Date().toISOString(),
     ...overrides,

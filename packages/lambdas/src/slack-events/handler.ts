@@ -2,27 +2,37 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import {
   buildAppHomeBlocks,
-  GitHubClientImpl,
   ConsoleLogger,
-  SlackClientImpl,
+  GitHubClientImpl,
+  SlackClientFactoryImpl,
   UserDaoImpl,
   UserServiceImpl,
+  verifySlackSignature,
+  WorkspaceDaoImpl,
+  WorkspaceServiceImpl,
 } from '@pr-notify/core'
 import type { NotificationPreferences } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
-const SLACK_BOT_TOKEN = process.env['SLACK_BOT_TOKEN'] ?? ''
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
+const WORKSPACES_TABLE_NAME = process.env['WORKSPACES_TABLE_NAME'] ?? ''
 const GITHUB_TOKEN = process.env['GITHUB_TOKEN']
+// Fallback token for backward compatibility during migration
+const SLACK_BOT_TOKEN = process.env['SLACK_BOT_TOKEN'] ?? ''
 
-// Initialize dependencies at module scope for Lambda cold-start caching
 const dynamoClient = new DynamoDBClient({})
 const docClient = DynamoDBDocumentClient.from(dynamoClient)
 const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
+const workspaceDao = new WorkspaceDaoImpl(docClient, WORKSPACES_TABLE_NAME)
 const githubClient = new GitHubClientImpl(GITHUB_TOKEN)
 const userService = new UserServiceImpl(userDao, githubClient)
-const slackClient = new SlackClientImpl(SLACK_BOT_TOKEN, SLACK_SIGNING_SECRET)
+const workspaceService = new WorkspaceServiceImpl(workspaceDao)
+const slackClientFactory = new SlackClientFactoryImpl(
+  workspaceService,
+  SLACK_SIGNING_SECRET,
+  SLACK_BOT_TOKEN || undefined,
+)
 const logger = new ConsoleLogger()
 
 /** Type guard for safely accessing untyped payload fields */
@@ -44,6 +54,29 @@ function parseSlackPayload(body: string): Record<string, unknown> {
 }
 
 /**
+ * Extracts the workspace (team) ID from various Slack payload formats.
+ * Events API puts it at payload.team_id, interactions at payload.team.id
+ * or payload.user.team_id.
+ */
+function extractTeamId(payload: Record<string, unknown>): string | undefined {
+  // Events API: top-level team_id
+  if (typeof payload['team_id'] === 'string') {
+    return payload['team_id']
+  }
+  // Interactions: nested team.id
+  const teamObj = payload['team']
+  if (isRecord(teamObj) && typeof teamObj['id'] === 'string') {
+    return teamObj['id']
+  }
+  // Fallback: user.team_id
+  const userObj = payload['user']
+  if (isRecord(userObj) && typeof userObj['team_id'] === 'string') {
+    return userObj['team_id']
+  }
+  return undefined
+}
+
+/**
  * Lambda handler for Slack Events API and interactive components.
  * Receives both /slack/events and /slack/interactions traffic.
  */
@@ -62,15 +95,14 @@ export async function handler(
       }
     }
 
-    // Verify Slack signature for all other requests.
-    // API Gateway REST API preserves header casing, so we need case-insensitive lookup.
+    // Verify Slack signature using standalone verifier (no bot token needed)
     const headers = Object.fromEntries(
       Object.entries(event.headers).map(([k, v]) => [k.toLowerCase(), v]),
     )
     const signature = headers['x-slack-signature'] ?? ''
     const timestamp = headers['x-slack-request-timestamp'] ?? ''
 
-    if (!slackClient.verifySignature(signature, timestamp, body)) {
+    if (!verifySlackSignature(SLACK_SIGNING_SECRET, signature, timestamp, body)) {
       logger.error('Invalid Slack signature')
       return {
         statusCode: 401,
@@ -78,8 +110,7 @@ export async function handler(
       }
     }
 
-    // Route based on event type — Events API nests under payload.event.type,
-    // while interactive payloads use payload.type directly
+    // Route based on event type
     const eventObj = payload['event']
     const eventType = isRecord(eventObj) ? String(eventObj['type']) : String(payload['type'])
 
@@ -88,6 +119,8 @@ export async function handler(
         return handleAppHomeOpened(payload)
       case 'block_actions':
         return handleBlockActions(payload)
+      case 'app_uninstalled':
+        return handleAppUninstalled(payload)
       default:
         logger.info('Unhandled event type', { eventType })
         return {
@@ -105,40 +138,43 @@ export async function handler(
 }
 
 /**
- * Handles the app_home_opened event by publishing the App Home view.
- * Looks up the user to determine linked/unlinked state and builds
- * the view accordingly.
+ * Publishes the App Home view for the user.
+ * Resolves the workspace-specific Slack client from the team_id in the payload.
  */
 async function handleAppHomeOpened(
   payload: Record<string, unknown>,
 ): Promise<APIGatewayProxyResult> {
   const eventData = payload['event']
   const userId = isRecord(eventData) ? String(eventData['user']) : undefined
+  const teamId = extractTeamId(payload)
 
-  if (!userId) {
+  if (!userId || !teamId) {
     return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
   }
 
   const user = await userService.getBySlackId(userId)
   const blocks = buildAppHomeBlocks(user)
+
+  const slackClient = await slackClientFactory.getClientForWorkspace(teamId)
   await slackClient.publishAppHome(userId, { type: 'home', blocks })
 
-  logger.info('App Home published', { userId, linked: !!user })
+  logger.info('App Home published', { userId, teamId, linked: !!user })
 
   return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
 }
 
 /**
  * Handles interactive component actions from the App Home.
- * Routes by action_id to the appropriate handler, then refreshes the view.
+ * Resolves workspace-specific client for view refresh.
  */
 async function handleBlockActions(
   payload: Record<string, unknown>,
 ): Promise<APIGatewayProxyResult> {
   const userObj = payload['user']
   const userId = isRecord(userObj) ? String(userObj['id']) : undefined
+  const teamId = extractTeamId(payload)
 
-  if (!userId) {
+  if (!userId || !teamId) {
     return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
   }
 
@@ -159,18 +195,36 @@ async function handleBlockActions(
     }
   }
 
-  // Refresh the App Home view after any action to reflect the new state
+  // Refresh the App Home view with workspace-specific client
   const user = await userService.getBySlackId(userId)
   const blocks = buildAppHomeBlocks(user)
+  const slackClient = await slackClientFactory.getClientForWorkspace(teamId)
   await slackClient.publishAppHome(userId, { type: 'home', blocks })
 
   return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
 }
 
 /**
+ * Handles app_uninstalled event by removing the workspace record.
+ * This deletes the stored bot token so the workspace is cleanly removed.
+ */
+async function handleAppUninstalled(
+  payload: Record<string, unknown>,
+): Promise<APIGatewayProxyResult> {
+  const teamId = extractTeamId(payload)
+
+  if (!teamId) {
+    return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
+  }
+
+  await workspaceService.removeInstallation(teamId)
+  logger.info('Workspace uninstalled', { teamId })
+
+  return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
+}
+
+/**
  * Derives the full preferences state from the checkbox selection.
- * Slack sends all currently selected options — a preference is ON if
- * its key appears in selected_options, OFF otherwise.
  */
 async function handlePreferencesChange(
   userId: string,
@@ -179,14 +233,12 @@ async function handlePreferencesChange(
   const selectedOptions = action['selected_options']
   if (!Array.isArray(selectedOptions)) return
 
-  // Build set of selected preference keys from the checkbox values
   const selectedKeys = new Set(
     selectedOptions
       .filter((opt): opt is Record<string, unknown> => isRecord(opt))
       .map((opt) => String(opt['value'])),
   )
 
-  // Build complete preferences — true if selected, false otherwise
   const preferences: NotificationPreferences = {
     reviewRequests: selectedKeys.has('reviewRequests'),
     reviewsOnMyPrs: selectedKeys.has('reviewsOnMyPrs'),

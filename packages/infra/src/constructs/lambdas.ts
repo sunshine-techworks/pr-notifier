@@ -21,30 +21,53 @@ export interface LambdasConstructProps {
 }
 
 /**
- * Lambdas construct for PR Notify
- * Creates all Lambda functions with proper bundling and permissions
+ * Lambdas construct for PR Notify.
+ * Creates all Lambda functions with proper bundling and permissions.
  */
 export class LambdasConstruct extends cdk.NestedStack {
   public readonly webhookIngestLambda: lambda.Function
   public readonly notificationProcessorLambda: lambda.Function
   public readonly slackCommandsLambda: lambda.Function
   public readonly slackEventsLambda: lambda.Function
+  public readonly slackOAuthLambda: lambda.Function
 
   constructor(scope: Construct, id: string, props: LambdasConstructProps) {
     super(scope, id)
 
     // Resolve secrets from SSM Parameter Store at deploy time
     const slackBotToken = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackBotTokenParam', '/pr-notify/slack-bot-token',
+      this,
+      'SlackBotTokenParam',
+      '/pr-notify/slack-bot-token',
     )
     const slackSigningSecret = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackSigningSecretParam', '/pr-notify/slack-signing-secret',
+      this,
+      'SlackSigningSecretParam',
+      '/pr-notify/slack-signing-secret',
     )
     const githubWebhookSecret = ssm.StringParameter.fromStringParameterName(
-      this, 'GitHubWebhookSecretParam', '/pr-notify/github-webhook-secret',
+      this,
+      'GitHubWebhookSecretParam',
+      '/pr-notify/github-webhook-secret',
+    )
+    const slackClientId = ssm.StringParameter.fromStringParameterName(
+      this,
+      'SlackClientIdParam',
+      '/pr-notify/slack-client-id',
+    )
+    const slackClientSecret = ssm.StringParameter.fromStringParameterName(
+      this,
+      'SlackClientSecretParam',
+      '/pr-notify/slack-client-secret',
+    )
+    const slackAppId = ssm.StringParameter.fromStringParameterName(
+      this,
+      'SlackAppIdParam',
+      '/pr-notify/slack-app-id',
     )
 
-    // Shared Lambda configuration
+    // Shared Lambda configuration for existing handlers.
+    // SLACK_BOT_TOKEN remains as a fallback during migration to per-workspace tokens.
     const sharedConfig = {
       runtime: lambda.Runtime.NODEJS_22_X,
       architecture: lambda.Architecture.ARM_64,
@@ -61,26 +84,23 @@ export class LambdasConstruct extends cdk.NestedStack {
       },
     }
 
-    // Path to lambdas package source
     const lambdasPath = join(__dirname, '../../../lambdas/src')
 
-    // esbuild bundling configuration for ESM modules
     const bundlingConfig = {
       minify: true,
       sourceMap: true,
       target: 'node22',
       format: lambdaNodejs.OutputFormat.ESM,
-      // Mark AWS SDK as external since Lambda runtime provides it
       externalModules: ['@aws-sdk/*'],
-      // Enable tree-shaking for smaller bundles
       mainFields: ['module', 'main'],
       // Shim CJS require() for dependencies like @slack/web-api that use
       // dynamic require('node:...') internally, which breaks in ESM bundles
-      banner: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+      banner:
+        "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
     }
 
-    // Webhook Ingest Lambda
-    // Receives GitHub webhooks, validates signatures, and queues notifications
+    // --- Existing Lambda functions ---
+
     this.webhookIngestLambda = new lambdaNodejs.NodejsFunction(this, 'WebhookIngestLambda', {
       ...sharedConfig,
       functionName: 'pr-notify-webhook-ingest',
@@ -90,8 +110,6 @@ export class LambdasConstruct extends cdk.NestedStack {
       description: 'Ingests GitHub webhooks and queues notifications',
     })
 
-    // Notification Processor Lambda
-    // Consumes from SQS queue and sends Slack DMs
     this.notificationProcessorLambda = new lambdaNodejs.NodejsFunction(
       this,
       'NotificationProcessorLambda',
@@ -105,8 +123,6 @@ export class LambdasConstruct extends cdk.NestedStack {
       },
     )
 
-    // Slack Commands Lambda
-    // Handles /pr-notify slash commands
     this.slackCommandsLambda = new lambdaNodejs.NodejsFunction(this, 'SlackCommandsLambda', {
       ...sharedConfig,
       functionName: 'pr-notify-slack-commands',
@@ -116,8 +132,6 @@ export class LambdasConstruct extends cdk.NestedStack {
       description: 'Handles Slack slash commands for PR Notify',
     })
 
-    // Slack Events Lambda
-    // Handles app_home_opened, block_actions, etc.
     this.slackEventsLambda = new lambdaNodejs.NodejsFunction(this, 'SlackEventsLambda', {
       ...sharedConfig,
       functionName: 'pr-notify-slack-events',
@@ -127,29 +141,52 @@ export class LambdasConstruct extends cdk.NestedStack {
       description: 'Handles Slack Events API callbacks',
     })
 
-    // Grant permissions
+    // --- New OAuth Lambda ---
 
-    // Webhook ingest needs to write to the notification queue
+    this.slackOAuthLambda = new lambdaNodejs.NodejsFunction(this, 'SlackOAuthLambda', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      functionName: 'pr-notify-slack-oauth',
+      entry: join(lambdasPath, 'slack-oauth/handler.ts'),
+      handler: 'handler',
+      bundling: bundlingConfig,
+      description: 'Handles Slack OAuth 2.0 install flow',
+      // Only the OAuth-specific env vars needed (no bot token or signing secret)
+      environment: {
+        NODE_OPTIONS: '--enable-source-maps',
+        WORKSPACES_TABLE_NAME: props.workspacesTable.tableName,
+        SLACK_CLIENT_ID: slackClientId.stringValue,
+        SLACK_CLIENT_SECRET: slackClientSecret.stringValue,
+        SLACK_APP_ID: slackAppId.stringValue,
+      },
+    })
+
+    // --- Permissions ---
+
+    // Webhook ingest: queue + users read
     props.notificationQueue.grantSendMessages(this.webhookIngestLambda)
-    // Also needs to read users table to find notification targets
     props.usersTable.grantReadData(this.webhookIngestLambda)
 
-    // Notification processor consumes from the queue
+    // Notification processor: SQS source + users read + workspaces read (token lookup)
     this.notificationProcessorLambda.addEventSource(
       new lambdaEventSources.SqsEventSource(props.notificationQueue, {
         batchSize: 10,
-        // Enable partial batch response for better error handling
         reportBatchItemFailures: true,
       }),
     )
-    // Needs read access to users for notification preferences
     props.usersTable.grantReadData(this.notificationProcessorLambda)
     props.workspacesTable.grantReadData(this.notificationProcessorLambda)
 
-    // Slack commands needs read/write to users for linking accounts
+    // Slack commands: users read/write for account linking
     props.usersTable.grantReadWriteData(this.slackCommandsLambda)
 
-    // Slack events needs read/write to users for preferences and unlinking
+    // Slack events: users read/write + workspaces read/write (token lookup + app_uninstalled)
     props.usersTable.grantReadWriteData(this.slackEventsLambda)
+    props.workspacesTable.grantReadWriteData(this.slackEventsLambda)
+
+    // OAuth: workspaces read/write for storing installation tokens
+    props.workspacesTable.grantReadWriteData(this.slackOAuthLambda)
   }
 }

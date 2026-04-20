@@ -15,12 +15,15 @@ export {
   createMockLogger,
   createMockNotificationQueue,
   createMockNotificationService,
+  createMockOAuthService,
   createMockSlackClient,
+  createMockSlackClientFactory,
   createMockSQSClient,
   createMockUserDao,
   createMockUserService,
   createMockWebhookProcessor,
   createMockWorkspaceDao,
+  createMockWorkspaceService,
 } from './mocks'
 export type { MockDynamoDBDocumentClient, MockSQSClient } from './mocks'
 

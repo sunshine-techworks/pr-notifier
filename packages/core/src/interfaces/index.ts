@@ -11,7 +11,9 @@ export type {
 } from './github-client'
 export type { Logger } from './logger'
 export type { NotificationQueue } from './notification-queue'
+export type { OAuthExchangeResult, OAuthService } from './oauth-service'
 export type { SlackClient } from './slack-client'
+export type { SlackClientFactory } from './slack-client-factory'
 
 // Service interfaces
 export type { NotificationService } from './notification-service'
@@ -22,3 +24,4 @@ export type {
   UserService,
 } from './user-service'
 export type { ProcessingResult, SkippedNotification, WebhookProcessor } from './webhook-processor'
+export type { WorkspaceService } from './workspace-service'
