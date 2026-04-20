@@ -38,3 +38,10 @@ coverage/
 
 # Misc
 *.tsbuildinfo
+
+# Internal docs (strategy, roadmap)
+PRODUCT.md
+TODO.md
+
+# Git worktrees
+.worktrees/
