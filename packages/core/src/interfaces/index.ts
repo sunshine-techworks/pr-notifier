@@ -11,6 +11,7 @@ export type {
 } from './github-client'
 export type { Logger } from './logger'
 export type { NotificationQueue } from './notification-queue'
+export type { OAuthExchangeResult, OAuthService } from './oauth-service'
 export type { SlackClient } from './slack-client'
 export type { SlackClientFactory } from './slack-client-factory'
 

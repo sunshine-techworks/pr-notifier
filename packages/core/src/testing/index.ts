@@ -20,6 +20,7 @@ export {
   createMockUserDao,
   createMockUserService,
   createMockWebhookProcessor,
+  createMockOAuthService,
   createMockSlackClientFactory,
   createMockWorkspaceDao,
   createMockWorkspaceService,
