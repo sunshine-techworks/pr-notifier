@@ -121,6 +121,8 @@ export async function handler(
         return handleBlockActions(payload)
       case 'app_uninstalled':
         return handleAppUninstalled(payload)
+      case 'tokens_revoked':
+        return handleTokensRevoked(payload)
       default:
         logger.info('Unhandled event type', { eventType })
         return {
@@ -219,6 +221,26 @@ async function handleAppUninstalled(
 
   await workspaceService.removeInstallation(teamId)
   logger.info('Workspace uninstalled', { teamId })
+
+  return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
+}
+
+/**
+ * Handles tokens_revoked event by removing the workspace record.
+ * Slack sends this when a workspace admin revokes the bot token.
+ * We treat it the same as an uninstall since the token is no longer valid.
+ */
+async function handleTokensRevoked(
+  payload: Record<string, unknown>,
+): Promise<APIGatewayProxyResult> {
+  const teamId = extractTeamId(payload)
+
+  if (!teamId) {
+    return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
+  }
+
+  await workspaceService.removeInstallation(teamId)
+  logger.info('Tokens revoked, workspace removed', { teamId })
 
   return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
 }
