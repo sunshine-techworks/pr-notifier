@@ -73,14 +73,16 @@ export class NotificationServiceImpl implements NotificationService {
 
     blocks.push({ type: 'divider' })
 
-    // Add branch info
-    blocks.push({
-      type: 'section',
-      fields: [
-        { type: 'mrkdwn', text: `*Branch:*\n\`${notification.headRef}\`` },
-        { type: 'mrkdwn', text: `*Target:*\n\`${notification.baseRef}\`` },
-      ],
-    })
+    // Only show branch info when available (issue_comment events lack branch refs)
+    if (notification.headRef && notification.baseRef) {
+      blocks.push({
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*Branch:*\n\`${notification.headRef}\`` },
+          { type: 'mrkdwn', text: `*Target:*\n\`${notification.baseRef}\`` },
+        ],
+      })
+    }
 
     // Add action buttons
     blocks.push({
