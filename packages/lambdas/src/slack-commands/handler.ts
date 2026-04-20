@@ -1,6 +1,11 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
-import { GitHubClientImpl, UserDaoImpl, UserServiceImpl, verifySlackSignature } from '@pr-notify/core'
+import {
+  GitHubClientImpl,
+  UserDaoImpl,
+  UserServiceImpl,
+  verifySlackSignature,
+} from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''

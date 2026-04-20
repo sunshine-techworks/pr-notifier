@@ -38,7 +38,7 @@ export class SlackClientFactoryImpl implements SlackClientFactory {
     if (!token) {
       throw new Error(
         `No bot token found for workspace ${workspaceId}. `
-        + 'The workspace may not have completed OAuth installation.',
+          + 'The workspace may not have completed OAuth installation.',
       )
     }
 

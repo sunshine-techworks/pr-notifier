@@ -29,7 +29,9 @@ const githubClient = new GitHubClientImpl(GITHUB_TOKEN)
 const userService = new UserServiceImpl(userDao, githubClient)
 const workspaceService = new WorkspaceServiceImpl(workspaceDao)
 const slackClientFactory = new SlackClientFactoryImpl(
-  workspaceService, SLACK_SIGNING_SECRET, SLACK_BOT_TOKEN || undefined,
+  workspaceService,
+  SLACK_SIGNING_SECRET,
+  SLACK_BOT_TOKEN || undefined,
 )
 const logger = new ConsoleLogger()
 

@@ -88,7 +88,8 @@ async function handleCallback(
     logger.error('OAuth callback missing code parameter')
     return {
       statusCode: 400,
-      body: '<html><body><h2>Installation failed</h2><p>Missing authorization code. Please try again.</p></body></html>',
+      body:
+        '<html><body><h2>Installation failed</h2><p>Missing authorization code. Please try again.</p></body></html>',
       headers: { 'Content-Type': 'text/html' },
     }
   }
@@ -99,7 +100,9 @@ async function handleCallback(
     logger.error('OAuth token exchange failed', { error: result.error })
     return {
       statusCode: 400,
-      body: `<html><body><h2>Installation failed</h2><p>Error: ${result.error ?? 'unknown'}. Please try again.</p></body></html>`,
+      body: `<html><body><h2>Installation failed</h2><p>Error: ${
+        result.error ?? 'unknown'
+      }. Please try again.</p></body></html>`,
       headers: { 'Content-Type': 'text/html' },
     }
   }

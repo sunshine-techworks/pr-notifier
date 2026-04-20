@@ -36,22 +36,34 @@ export class LambdasConstruct extends cdk.NestedStack {
 
     // Resolve secrets from SSM Parameter Store at deploy time
     const slackBotToken = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackBotTokenParam', '/pr-notify/slack-bot-token',
+      this,
+      'SlackBotTokenParam',
+      '/pr-notify/slack-bot-token',
     )
     const slackSigningSecret = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackSigningSecretParam', '/pr-notify/slack-signing-secret',
+      this,
+      'SlackSigningSecretParam',
+      '/pr-notify/slack-signing-secret',
     )
     const githubWebhookSecret = ssm.StringParameter.fromStringParameterName(
-      this, 'GitHubWebhookSecretParam', '/pr-notify/github-webhook-secret',
+      this,
+      'GitHubWebhookSecretParam',
+      '/pr-notify/github-webhook-secret',
     )
     const slackClientId = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackClientIdParam', '/pr-notify/slack-client-id',
+      this,
+      'SlackClientIdParam',
+      '/pr-notify/slack-client-id',
     )
     const slackClientSecret = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackClientSecretParam', '/pr-notify/slack-client-secret',
+      this,
+      'SlackClientSecretParam',
+      '/pr-notify/slack-client-secret',
     )
     const slackAppId = ssm.StringParameter.fromStringParameterName(
-      this, 'SlackAppIdParam', '/pr-notify/slack-app-id',
+      this,
+      'SlackAppIdParam',
+      '/pr-notify/slack-app-id',
     )
 
     // Shared Lambda configuration for existing handlers.
@@ -83,7 +95,8 @@ export class LambdasConstruct extends cdk.NestedStack {
       mainFields: ['module', 'main'],
       // Shim CJS require() for dependencies like @slack/web-api that use
       // dynamic require('node:...') internally, which breaks in ESM bundles
-      banner: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+      banner:
+        "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
     }
 
     // --- Existing Lambda functions ---

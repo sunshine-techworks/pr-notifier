@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { WorkspaceDao } from '../interfaces/workspace-dao'
-import {
-  createMockWorkspaceDao,
-  createTestWorkspace,
-} from '../testing/index'
+import { createMockWorkspaceDao, createTestWorkspace } from '../testing/index'
 
 import { WorkspaceServiceImpl } from './workspace-service-impl'
 

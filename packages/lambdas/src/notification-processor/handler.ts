@@ -25,7 +25,9 @@ const workspaceDao = new WorkspaceDaoImpl(docClient, WORKSPACES_TABLE_NAME)
 const workspaceService = new WorkspaceServiceImpl(workspaceDao)
 const notificationService = new NotificationServiceImpl()
 const slackClientFactory = new SlackClientFactoryImpl(
-  workspaceService, SLACK_SIGNING_SECRET, SLACK_BOT_TOKEN || undefined,
+  workspaceService,
+  SLACK_SIGNING_SECRET,
+  SLACK_BOT_TOKEN || undefined,
 )
 const logger = new ConsoleLogger()
 

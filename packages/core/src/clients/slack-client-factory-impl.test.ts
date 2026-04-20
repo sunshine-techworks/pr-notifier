@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { WorkspaceService } from '../interfaces/workspace-service'
-import {
-  createMockWorkspaceService,
-  createTestWorkspace,
-} from '../testing/index'
+import { createMockWorkspaceService, createTestWorkspace } from '../testing/index'
 
 import { SlackClientFactoryImpl } from './slack-client-factory-impl'
 
@@ -77,7 +74,9 @@ describe('SlackClientFactoryImpl', () => {
     )
 
     const factory = new SlackClientFactoryImpl(
-      mockWorkspaceService, signingSecret, 'xoxb-fallback-token',
+      mockWorkspaceService,
+      signingSecret,
+      'xoxb-fallback-token',
     )
     const client = await factory.getClientForWorkspace('W_OLD')
 
@@ -88,7 +87,9 @@ describe('SlackClientFactoryImpl', () => {
     vi.mocked(mockWorkspaceService.getById).mockResolvedValue(null)
 
     const factory = new SlackClientFactoryImpl(
-      mockWorkspaceService, signingSecret, 'xoxb-fallback-token',
+      mockWorkspaceService,
+      signingSecret,
+      'xoxb-fallback-token',
     )
     const client = await factory.getClientForWorkspace('W_UNKNOWN')
 
