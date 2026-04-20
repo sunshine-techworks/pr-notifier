@@ -22,3 +22,4 @@ export type {
   UserService,
 } from './user-service'
 export type { ProcessingResult, SkippedNotification, WebhookProcessor } from './webhook-processor'
+export type { WorkspaceService } from './workspace-service'

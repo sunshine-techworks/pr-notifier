@@ -21,6 +21,7 @@ export {
   createMockUserService,
   createMockWebhookProcessor,
   createMockWorkspaceDao,
+  createMockWorkspaceService,
 } from './mocks'
 export type { MockDynamoDBDocumentClient, MockSQSClient } from './mocks'
 

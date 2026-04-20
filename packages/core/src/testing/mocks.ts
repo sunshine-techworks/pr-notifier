@@ -9,6 +9,7 @@ import type { UserDao } from '../interfaces/user-dao'
 import type { UserService } from '../interfaces/user-service'
 import type { WebhookProcessor } from '../interfaces/webhook-processor'
 import type { WorkspaceDao } from '../interfaces/workspace-dao'
+import type { WorkspaceService } from '../interfaces/workspace-service'
 
 // --- DAO Mocks ---
 
@@ -37,6 +38,17 @@ export function createMockWorkspaceDao(): WorkspaceDao {
     findById: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  }
+}
+
+/**
+ * Creates a mock WorkspaceService with all methods as vi.fn().
+ */
+export function createMockWorkspaceService(): WorkspaceService {
+  return {
+    getById: vi.fn(),
+    registerInstallation: vi.fn(),
+    removeInstallation: vi.fn(),
   }
 }
 
