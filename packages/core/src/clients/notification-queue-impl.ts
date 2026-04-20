@@ -21,10 +21,6 @@ export class NotificationQueueImpl implements NotificationQueue {
       new SendMessageCommand({
         QueueUrl: this.queueUrl,
         MessageBody: JSON.stringify(notification),
-        // Use notification ID as deduplication ID if using FIFO queue
-        MessageDeduplicationId: notification.id,
-        // Group by target user to maintain order per user
-        MessageGroupId: notification.targetSlackUserId,
       }),
     )
   }
@@ -42,8 +38,6 @@ export class NotificationQueueImpl implements NotificationQueue {
           Entries: batch.map((notification, index) => ({
             Id: `${i + index}`,
             MessageBody: JSON.stringify(notification),
-            MessageDeduplicationId: notification.id,
-            MessageGroupId: notification.targetSlackUserId,
           })),
         }),
       )
