@@ -65,6 +65,11 @@ export class NotificationServiceImpl implements NotificationService {
           } *${notification.actorGithubUsername}*`,
         },
         {
+          type: 'image',
+          image_url: `https://github.com/${notification.repository.split('/')[0]}.png`,
+          alt_text: notification.repository,
+        },
+        {
           type: 'mrkdwn',
           text: `*${notification.repository}*`,
         },
