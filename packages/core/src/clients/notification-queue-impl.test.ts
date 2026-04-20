@@ -41,30 +41,16 @@ describe('NotificationQueueImpl', () => {
       expect(input.MessageBody).toBe(JSON.stringify(notification))
     })
 
-    it('uses notification ID as deduplication ID for FIFO queue', async () => {
+    it('does not include FIFO-specific params for standard queues', async () => {
       mockSQSClient.send.mockResolvedValue({})
 
-      const notification = createTestNotification({
-        id: 'notif_unique_456',
-      })
+      const notification = createTestNotification()
 
       await queue.send(notification)
 
       const sentCommand = mockSQSClient.send.mock.calls[0][0]
-      expect(sentCommand.input.MessageDeduplicationId).toBe('notif_unique_456')
-    })
-
-    it('uses target Slack user ID as message group ID to maintain order per user', async () => {
-      mockSQSClient.send.mockResolvedValue({})
-
-      const notification = createTestNotification({
-        targetSlackUserId: 'U_TARGET_USER',
-      })
-
-      await queue.send(notification)
-
-      const sentCommand = mockSQSClient.send.mock.calls[0][0]
-      expect(sentCommand.input.MessageGroupId).toBe('U_TARGET_USER')
+      expect(sentCommand.input.MessageDeduplicationId).toBeUndefined()
+      expect(sentCommand.input.MessageGroupId).toBeUndefined()
     })
   })
 
@@ -157,14 +143,10 @@ describe('NotificationQueueImpl', () => {
       // Verify first entry
       expect(entries[0].Id).toBe('0')
       expect(entries[0].MessageBody).toBe(JSON.stringify(notifications[0]))
-      expect(entries[0].MessageDeduplicationId).toBe('notif_first')
-      expect(entries[0].MessageGroupId).toBe('U_FIRST')
 
       // Verify second entry
       expect(entries[1].Id).toBe('1')
       expect(entries[1].MessageBody).toBe(JSON.stringify(notifications[1]))
-      expect(entries[1].MessageDeduplicationId).toBe('notif_second')
-      expect(entries[1].MessageGroupId).toBe('U_SECOND')
     })
 
     it('uses correct entry IDs across multiple batches', async () => {
