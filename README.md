@@ -5,7 +5,7 @@
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-green.svg)](.nvmrc)
 
-[Landing Page](https://sunshine-techworks.github.io/) | [Privacy Policy](https://sunshine-techworks.github.io/pr-notify-privacy.html) | [Support](https://github.com/sunshine-techworks/pr-notifier/issues)
+[Landing Page](https://sunshinetech.com.au/pr-notify.html) | [Privacy Policy](https://sunshinetech.com.au/pr-notify-privacy.html) | [Support](https://github.com/sunshine-techworks/pr-notifier/issues)
 
 ---
 
@@ -33,7 +33,7 @@ PR Notify delivers only the GitHub PR activity that matters to you, directly to 
 
 ### For users (hosted version)
 
-1. **Install the Slack app** -- click [Add to Slack](https://sunshine-techworks.github.io/) and authorize PR Notify in your workspace
+1. **Install the Slack app** -- click [Add to Slack](https://sunshinetech.com.au/pr-notify.html) and authorize PR Notify in your workspace
 2. **Install the GitHub app** -- add [PR Notify Bot](https://github.com/apps/pr-notify-bot) to your GitHub organization and select your repositories
 3. **Link your account** -- run `/pr-notify link your-github-username` in Slack
 
@@ -231,4 +231,4 @@ For commercial licensing inquiries, please [contact us](https://github.com/sunsh
 
 ---
 
-Built by [Sunshine Techworks](https://sunshine-techworks.github.io/)
+Built by [Sunshine Techworks](https://sunshinetech.com.au)
