@@ -468,6 +468,7 @@ describe('NotificationServiceImpl', () => {
         headRef: 'feature-branch',
         baseRef: 'develop',
         reviewState: 'approved',
+        reviewUrl: 'https://github.com/org/repo/pull/100#pullrequestreview-1',
       })
 
       expect(notification.type).toBe('review_submitted')
@@ -489,6 +490,7 @@ describe('NotificationServiceImpl', () => {
         headRef: 'feature-branch',
         baseRef: 'develop',
         reviewState: 'changes_requested',
+        reviewUrl: 'https://github.com/org/repo/pull/100#pullrequestreview-1',
       })
 
       expect(notification.reviewState).toBe('changes_requested')
@@ -508,6 +510,7 @@ describe('NotificationServiceImpl', () => {
         headRef: 'feature-branch',
         baseRef: 'develop',
         reviewState: 'commented',
+        reviewUrl: 'https://github.com/org/repo/pull/100#pullrequestreview-1',
       })
 
       expect(notification.reviewState).toBe('commented')

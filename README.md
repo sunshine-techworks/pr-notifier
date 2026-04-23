@@ -41,11 +41,11 @@ That's it. You'll start receiving PR notifications via DM.
 
 ### Available commands
 
-| Command | Description |
-|---------|-------------|
-| `/pr-notify link <username>` | Link your GitHub account |
-| `/pr-notify prefs` | Open notification preferences (App Home) |
-| `/pr-notify help` | Show available commands |
+| Command                      | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `/pr-notify link <username>` | Link your GitHub account                 |
+| `/pr-notify prefs`           | Open notification preferences (App Home) |
+| `/pr-notify help`            | Show available commands                  |
 
 ## Architecture
 
@@ -74,24 +74,24 @@ DynamoDB (users, workspaces)
 
 ### Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Runtime | Node.js 22, TypeScript |
-| Compute | AWS Lambda (ARM64) |
-| API | AWS API Gateway (REST) |
-| Database | AWS DynamoDB |
-| Queue | AWS SQS |
-| Infrastructure | AWS CDK |
-| Slack SDK | @slack/web-api |
-| Validation | Zod |
+| Component      | Technology             |
+| -------------- | ---------------------- |
+| Runtime        | Node.js 22, TypeScript |
+| Compute        | AWS Lambda (ARM64)     |
+| API            | AWS API Gateway (REST) |
+| Database       | AWS DynamoDB           |
+| Queue          | AWS SQS                |
+| Infrastructure | AWS CDK                |
+| Slack SDK      | @slack/web-api         |
+| Validation     | Zod                    |
 
 ### Package Structure
 
-| Package | Description |
-|---------|-------------|
-| `packages/core` | Shared business logic, types, interfaces, DAOs, clients, and services |
+| Package            | Description                                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `packages/core`    | Shared business logic, types, interfaces, DAOs, clients, and services                               |
 | `packages/lambdas` | Lambda handlers (webhook-ingest, notification-processor, slack-commands, slack-events, slack-oauth) |
-| `packages/infra` | AWS CDK infrastructure definitions |
+| `packages/infra`   | AWS CDK infrastructure definitions                                                                  |
 
 ## Development
 
@@ -180,17 +180,17 @@ PR Notify can be self-hosted on your own AWS account under the BSL 1.1 license.
 
 ### Environment Variables
 
-| Variable | Description | Used By |
-|----------|-------------|---------|
-| `USERS_TABLE_NAME` | DynamoDB users table | All handlers |
-| `WORKSPACES_TABLE_NAME` | DynamoDB workspaces table | All handlers |
-| `NOTIFICATION_QUEUE_URL` | SQS queue URL | webhook-ingest, notification-processor |
-| `SLACK_BOT_TOKEN` | Fallback bot token (migration) | slack-events, notification-processor |
-| `SLACK_SIGNING_SECRET` | Slack app signing secret | slack-commands, slack-events |
-| `GITHUB_WEBHOOK_SECRET` | GitHub webhook secret | webhook-ingest |
-| `SLACK_CLIENT_ID` | Slack OAuth client ID | slack-oauth |
-| `SLACK_CLIENT_SECRET` | Slack OAuth client secret | slack-oauth |
-| `SLACK_APP_ID` | Slack app ID (for OAuth redirect) | slack-oauth |
+| Variable                 | Description                       | Used By                                |
+| ------------------------ | --------------------------------- | -------------------------------------- |
+| `USERS_TABLE_NAME`       | DynamoDB users table              | All handlers                           |
+| `WORKSPACES_TABLE_NAME`  | DynamoDB workspaces table         | All handlers                           |
+| `NOTIFICATION_QUEUE_URL` | SQS queue URL                     | webhook-ingest, notification-processor |
+| `SLACK_BOT_TOKEN`        | Fallback bot token (migration)    | slack-events, notification-processor   |
+| `SLACK_SIGNING_SECRET`   | Slack app signing secret          | slack-commands, slack-events           |
+| `GITHUB_WEBHOOK_SECRET`  | GitHub webhook secret             | webhook-ingest                         |
+| `SLACK_CLIENT_ID`        | Slack OAuth client ID             | slack-oauth                            |
+| `SLACK_CLIENT_SECRET`    | Slack OAuth client secret         | slack-oauth                            |
+| `SLACK_APP_ID`           | Slack app ID (for OAuth redirect) | slack-oauth                            |
 
 ## Project Structure
 

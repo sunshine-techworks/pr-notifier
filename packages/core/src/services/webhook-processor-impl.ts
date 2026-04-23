@@ -117,6 +117,7 @@ export class WebhookProcessorImpl implements WebhookProcessor {
           targetUser,
           ...this.buildCommonParams(payload.sender, payload.pull_request, payload.repository),
           reviewState,
+          reviewUrl: payload.review.html_url,
         }),
     })
   }

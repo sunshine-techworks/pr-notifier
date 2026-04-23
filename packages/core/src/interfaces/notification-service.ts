@@ -45,6 +45,7 @@ export interface NotificationService {
     headRef: string
     baseRef: string
     reviewState: ReviewState
+    reviewUrl: string
   }): Notification
 
   /**

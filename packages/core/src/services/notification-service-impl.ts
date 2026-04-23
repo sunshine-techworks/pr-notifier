@@ -1,5 +1,12 @@
 import type { NotificationService } from '../interfaces/index'
-import type { Notification, NotificationType, ReviewState, SlackBlock, User } from '../types/index'
+import type {
+  Notification,
+  NotificationType,
+  ReviewState,
+  SlackBlock,
+  SlackButtonElement,
+  User,
+} from '../types/index'
 
 /**
  * Implementation of NotificationService
@@ -89,24 +96,10 @@ export class NotificationServiceImpl implements NotificationService {
       })
     }
 
-    // Add action buttons
+    // Add contextual action buttons based on notification type
     blocks.push({
       type: 'actions',
-      elements: [
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: 'View Changes', emoji: true },
-          action_id: 'view_changes',
-          url: `${notification.prUrl}/files`,
-        },
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: 'Open PR', emoji: true },
-          action_id: 'open_pr',
-          url: notification.prUrl,
-          style: 'primary',
-        },
-      ],
+      elements: this.getActionButtons(notification),
     })
 
     return blocks
@@ -154,6 +147,7 @@ export class NotificationServiceImpl implements NotificationService {
     headRef: string
     baseRef: string
     reviewState: ReviewState
+    reviewUrl: string
   }): Notification {
     return {
       id: this.generateId(),
@@ -170,6 +164,8 @@ export class NotificationServiceImpl implements NotificationService {
       headRef: params.headRef,
       baseRef: params.baseRef,
       reviewState: params.reviewState,
+      // Store review URL in commentUrl field for the deep-link button
+      commentUrl: params.reviewUrl,
       createdAt: new Date().toISOString(),
     }
   }
@@ -289,6 +285,82 @@ export class NotificationServiceImpl implements NotificationService {
         return 'Triggered by'
       default:
         return 'By'
+    }
+  }
+
+  /**
+   * Returns contextual action buttons based on notification type.
+   * Each type gets a primary action that deep-links to the relevant
+   * activity (review, comment, mention) plus a secondary "Open PR" button.
+   */
+  private getActionButtons(notification: Notification): SlackButtonElement[] {
+    const openPrButton: SlackButtonElement = {
+      type: 'button',
+      text: { type: 'plain_text', text: 'Open PR', emoji: true },
+      action_id: 'open_pr',
+      url: notification.prUrl,
+      style: 'primary',
+    }
+
+    switch (notification.type) {
+      case 'review_requested':
+        return [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Review Changes', emoji: true },
+            action_id: 'view_changes',
+            url: `${notification.prUrl}/files`,
+          },
+          openPrButton,
+        ]
+
+      case 'review_submitted':
+        return [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'View Review', emoji: true },
+            action_id: 'view_review',
+            // Deep-link to the specific review, fall back to PR page
+            url: notification.commentUrl ?? notification.prUrl,
+          },
+          openPrButton,
+        ]
+
+      case 'comment':
+        return [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'View Comment', emoji: true },
+            action_id: 'view_comment',
+            url: notification.commentUrl ?? notification.prUrl,
+          },
+          openPrButton,
+        ]
+
+      case 'mention':
+        return [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'View Mention', emoji: true },
+            action_id: 'view_mention',
+            url: notification.commentUrl ?? notification.prUrl,
+          },
+          openPrButton,
+        ]
+
+      case 'ci_failure':
+        return [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'View Failure', emoji: true },
+            action_id: 'view_failure',
+            url: notification.commentUrl ?? notification.prUrl,
+          },
+          openPrButton,
+        ]
+
+      default:
+        return [openPrButton]
     }
   }
 
