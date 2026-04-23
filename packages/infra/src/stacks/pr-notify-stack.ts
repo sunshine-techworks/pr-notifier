@@ -4,6 +4,7 @@ import type { Construct } from 'constructs'
 import { ApiConstruct } from '../constructs/api'
 import { DatabaseConstruct } from '../constructs/database'
 import { LambdasConstruct } from '../constructs/lambdas'
+import { ObservabilityConstruct } from '../constructs/observability'
 import { QueuesConstruct } from '../constructs/queues'
 
 /**
@@ -33,6 +34,17 @@ export class PrNotifyStack extends cdk.Stack {
       slackCommandsLambda: lambdas.slackCommandsLambda,
       slackEventsLambda: lambdas.slackEventsLambda,
       slackOAuthLambda: lambdas.slackOAuthLambda,
+    })
+
+    // Observability: CloudWatch dashboard, alarms, and Slack DM alerts
+    new ObservabilityConstruct(this, 'Observability', {
+      webhookIngestLambda: lambdas.webhookIngestLambda,
+      notificationProcessorLambda: lambdas.notificationProcessorLambda,
+      slackCommandsLambda: lambdas.slackCommandsLambda,
+      slackEventsLambda: lambdas.slackEventsLambda,
+      slackOAuthLambda: lambdas.slackOAuthLambda,
+      deadLetterQueue: queues.deadLetterQueue,
+      notificationQueue: queues.notificationQueue,
     })
 
     // Stack outputs for external reference

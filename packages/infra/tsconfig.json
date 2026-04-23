@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    // CDK types are not compatible with exactOptionalPropertyTypes
+    // (e.g., GraphWidget.warnings is string[] | undefined but IWidget expects string[])
+    "exactOptionalPropertyTypes": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "cdk.out"]
