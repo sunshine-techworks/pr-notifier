@@ -12,6 +12,8 @@ import {
 import type { ProcessingResult } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
+import { emitMetric, emitMetrics } from '../shared/metrics'
+
 const GITHUB_WEBHOOK_SECRET = process.env['GITHUB_WEBHOOK_SECRET'] ?? ''
 const NOTIFICATION_QUEUE_URL = process.env['NOTIFICATION_QUEUE_URL'] ?? ''
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
@@ -38,6 +40,7 @@ const webhookProcessor = new WebhookProcessorImpl(
 export async function handler(
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> {
+  const startTime = Date.now()
   try {
     // Validate webhook signature.
     // API Gateway REST API preserves header casing, so we need case-insensitive lookup.
@@ -85,6 +88,12 @@ export async function handler(
         break
       default:
         logger.info('Ignoring unsupported event type', { eventType })
+        emitMetric({
+          metricName: 'WebhooksIgnored',
+          value: 1,
+          unit: 'Count',
+          dimensions: { EventType: eventType },
+        })
         return {
           statusCode: 200,
           body: JSON.stringify({ message: 'Event type not supported' }),
@@ -99,6 +108,16 @@ export async function handler(
       skipped: result.skipped.length,
     })
 
+    emitMetrics({
+      metrics: [
+        { name: 'WebhooksProcessed', value: 1, unit: 'Count' },
+        { name: 'NotificationsQueued', value: result.notificationsSent, unit: 'Count' },
+        { name: 'NotificationsSkipped', value: result.skipped.length, unit: 'Count' },
+        { name: 'ProcessingLatency', value: Date.now() - startTime, unit: 'Milliseconds' },
+      ],
+      dimensions: { EventType: eventType },
+    })
+
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -109,6 +128,7 @@ export async function handler(
     }
   } catch (error) {
     logger.error('Error processing webhook', { error })
+    emitMetric({ metricName: 'WebhookErrors', value: 1, unit: 'Count' })
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal server error' }),

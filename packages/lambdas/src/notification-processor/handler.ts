@@ -11,6 +11,8 @@ import {
 } from '@pr-notify/core'
 import type { SQSEvent, SQSRecord } from 'aws-lambda'
 
+import { emitMetric } from '../shared/metrics'
+
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
 const WORKSPACES_TABLE_NAME = process.env['WORKSPACES_TABLE_NAME'] ?? ''
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
@@ -49,6 +51,7 @@ export async function handler(event: SQSEvent): Promise<void> {
 
   const failures = results.filter((r) => r.status === 'rejected')
   if (failures.length > 0) {
+    emitMetric({ metricName: 'NotificationDeliveryErrors', value: failures.length, unit: 'Count' })
     throw new Error(`Failed to process ${failures.length} records`)
   }
 }
@@ -66,6 +69,12 @@ async function processRecord(record: SQSRecord): Promise<void> {
   const user = await userDao.findById(notification.targetSlackUserId)
   if (!user) {
     logger.info('User not found, skipping', { userId: notification.targetSlackUserId })
+    emitMetric({
+      metricName: 'NotificationsSkippedAtDelivery',
+      value: 1,
+      unit: 'Count',
+      dimensions: { Reason: 'UserNotFound' },
+    })
     return
   }
 
@@ -73,6 +82,12 @@ async function processRecord(record: SQSRecord): Promise<void> {
     logger.info('Notification disabled by user preferences', {
       userId: user.slackUserId,
       type: notification.type,
+    })
+    emitMetric({
+      metricName: 'NotificationsSkippedAtDelivery',
+      value: 1,
+      unit: 'Count',
+      dimensions: { Reason: 'PreferenceDisabled' },
     })
     return
   }
@@ -94,5 +109,11 @@ async function processRecord(record: SQSRecord): Promise<void> {
   logger.info('Notification sent', {
     notificationId: notification.id,
     slackTs: result.ts,
+  })
+  emitMetric({
+    metricName: 'NotificationsSent',
+    value: 1,
+    unit: 'Count',
+    dimensions: { NotificationType: notification.type },
   })
 }

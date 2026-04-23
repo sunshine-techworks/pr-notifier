@@ -1,12 +1,15 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import {
+  ConsoleLogger,
   GitHubClientImpl,
   UserDaoImpl,
   UserServiceImpl,
   verifySlackSignature,
 } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
+
+import { emitMetric } from '../shared/metrics'
 
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
@@ -18,6 +21,7 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient)
 const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
 const githubClient = new GitHubClientImpl(GITHUB_TOKEN)
 const userService = new UserServiceImpl(userDao, githubClient)
+const logger = new ConsoleLogger()
 
 /**
  * Lambda handler for Slack slash commands
@@ -38,7 +42,7 @@ export async function handler(
     const body = event.body ?? ''
 
     if (!verifySlackSignature(SLACK_SIGNING_SECRET, signature, timestamp, body)) {
-      console.error('Invalid Slack signature')
+      logger.error('Invalid Slack signature')
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid signature' }),
@@ -52,10 +56,16 @@ export async function handler(
     const userId = params.get('user_id') ?? ''
     const teamId = params.get('team_id') ?? ''
 
-    console.log('Received slash command:', { command, text, userId })
+    logger.info('Received slash command', { command, text, userId })
 
     // Parse subcommand
     const [subcommand, ...args] = text.trim().split(/\s+/)
+    emitMetric({
+      metricName: 'CommandsUsed',
+      value: 1,
+      unit: 'Count',
+      dimensions: { Command: subcommand?.toLowerCase() ?? 'help' },
+    })
 
     switch (subcommand?.toLowerCase()) {
       case 'link':
@@ -67,7 +77,7 @@ export async function handler(
         return handleHelpCommand()
     }
   } catch (error) {
-    console.error('Error processing slash command:', error)
+    logger.error('Error processing slash command', { error })
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -98,6 +108,7 @@ async function handleLinkCommand(
   const result = await userService.linkGithubAccount(userId, teamId, githubUsername)
 
   if (result.success) {
+    emitMetric({ metricName: 'AccountsLinked', value: 1, unit: 'Count' })
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -108,8 +119,7 @@ async function handleLinkCommand(
     }
   }
 
-  // Handle specific error cases with user-friendly messages
-  console.error('Link account failed:', result.reason, result.message)
+  logger.error('Link account failed', { reason: result.reason, message: result.message })
 
   return {
     statusCode: 200,
