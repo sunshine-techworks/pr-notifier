@@ -351,7 +351,7 @@ describe('NotificationServiceImpl', () => {
         expect(viewChangesButton?.url).toBe('https://github.com/owner/repo/pull/42/files')
       })
 
-      it('includes Open PR button with correct URL and primary style', () => {
+      it('includes Open PR button as secondary (no style)', () => {
         const notification = createTestNotification({
           prUrl: 'https://github.com/owner/repo/pull/42',
         })
@@ -364,7 +364,23 @@ describe('NotificationServiceImpl', () => {
           (e): e is { action_id: string; url: string; style?: string } => e.action_id === 'open_pr',
         )
         expect(openPrButton?.url).toBe('https://github.com/owner/repo/pull/42')
-        expect(openPrButton?.style).toBe('primary')
+        expect(openPrButton?.style).toBeUndefined()
+      })
+
+      it('applies primary style to the contextual action button', () => {
+        const notification = createTestNotification({
+          type: 'review_requested',
+          prUrl: 'https://github.com/owner/repo/pull/42',
+        })
+        const blocks = service.buildSlackBlocks(notification)
+
+        const actions = blocks.find((b): b is SlackBlock & { type: 'actions' } =>
+          b.type === 'actions'
+        )
+        const reviewButton = actions?.elements?.find(
+          (e): e is { action_id: string; style?: string } => e.action_id === 'view_changes',
+        )
+        expect(reviewButton?.style).toBe('primary')
       })
     })
 

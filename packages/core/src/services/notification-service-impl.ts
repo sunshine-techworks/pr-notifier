@@ -299,7 +299,6 @@ export class NotificationServiceImpl implements NotificationService {
       text: { type: 'plain_text', text: 'Open PR', emoji: true },
       action_id: 'open_pr',
       url: notification.prUrl,
-      style: 'primary',
     }
 
     switch (notification.type) {
@@ -310,6 +309,7 @@ export class NotificationServiceImpl implements NotificationService {
             text: { type: 'plain_text', text: 'Review Changes', emoji: true },
             action_id: 'view_changes',
             url: `${notification.prUrl}/files`,
+            style: 'primary',
           },
           openPrButton,
         ]
@@ -320,8 +320,8 @@ export class NotificationServiceImpl implements NotificationService {
             type: 'button',
             text: { type: 'plain_text', text: 'View Review', emoji: true },
             action_id: 'view_review',
-            // Deep-link to the specific review, fall back to PR page
             url: notification.commentUrl ?? notification.prUrl,
+            style: 'primary',
           },
           openPrButton,
         ]
@@ -333,6 +333,7 @@ export class NotificationServiceImpl implements NotificationService {
             text: { type: 'plain_text', text: 'View Comment', emoji: true },
             action_id: 'view_comment',
             url: notification.commentUrl ?? notification.prUrl,
+            style: 'primary',
           },
           openPrButton,
         ]
@@ -344,6 +345,7 @@ export class NotificationServiceImpl implements NotificationService {
             text: { type: 'plain_text', text: 'View Mention', emoji: true },
             action_id: 'view_mention',
             url: notification.commentUrl ?? notification.prUrl,
+            style: 'primary',
           },
           openPrButton,
         ]
@@ -355,6 +357,7 @@ export class NotificationServiceImpl implements NotificationService {
             text: { type: 'plain_text', text: 'View Failure', emoji: true },
             action_id: 'view_failure',
             url: notification.commentUrl ?? notification.prUrl,
+            style: 'primary',
           },
           openPrButton,
         ]
