@@ -14,6 +14,8 @@ import {
 import type { NotificationPreferences } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
+import { emitMetric } from '../shared/metrics'
+
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
 const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
 const WORKSPACES_TABLE_NAME = process.env['WORKSPACES_TABLE_NAME'] ?? ''
@@ -194,6 +196,7 @@ async function handleBlockActions(
     } else if (actionId === 'unlink_account') {
       await userService.unlinkAccount(userId)
       logger.info('Account unlinked via App Home', { userId })
+      emitMetric({ metricName: 'AccountsUnlinked', value: 1, unit: 'Count' })
     }
   }
 
@@ -221,6 +224,7 @@ async function handleAppUninstalled(
 
   await workspaceService.removeInstallation(teamId)
   logger.info('Workspace uninstalled', { teamId })
+  emitMetric({ metricName: 'WorkspacesUninstalled', value: 1, unit: 'Count' })
 
   return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
 }
@@ -241,6 +245,12 @@ async function handleTokensRevoked(
 
   await workspaceService.removeInstallation(teamId)
   logger.info('Tokens revoked, workspace removed', { teamId })
+  emitMetric({
+    metricName: 'WorkspacesUninstalled',
+    value: 1,
+    unit: 'Count',
+    dimensions: { Reason: 'TokenRevoked' },
+  })
 
   return { statusCode: 200, body: JSON.stringify({ message: 'OK' }) }
 }

@@ -8,6 +8,8 @@ import {
 } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
+import { emitMetric } from '../shared/metrics'
+
 const SLACK_CLIENT_ID = process.env['SLACK_CLIENT_ID'] ?? ''
 const SLACK_CLIENT_SECRET = process.env['SLACK_CLIENT_SECRET'] ?? ''
 const SLACK_APP_ID = process.env['SLACK_APP_ID'] ?? ''
@@ -98,6 +100,7 @@ async function handleCallback(
 
   if (!result.ok || !result.accessToken || !result.teamId) {
     logger.error('OAuth token exchange failed', { error: result.error })
+    emitMetric({ metricName: 'OAuthErrors', value: 1, unit: 'Count' })
     return {
       statusCode: 400,
       body: `<html><body><h2>Installation failed</h2><p>Error: ${
@@ -118,6 +121,7 @@ async function handleCallback(
     teamId: result.teamId,
     teamName: result.teamName,
   })
+  emitMetric({ metricName: 'WorkspacesInstalled', value: 1, unit: 'Count' })
 
   // Redirect to the app in Slack
   return {
