@@ -21,6 +21,7 @@ export interface ObservabilityConstructProps {
   slackCommandsLambda: lambda.Function
   slackEventsLambda: lambda.Function
   slackOAuthLambda: lambda.Function
+  githubOAuthLambda: lambda.Function
   deadLetterQueue: sqs.Queue
   notificationQueue: sqs.Queue
 }
@@ -224,6 +225,10 @@ export class ObservabilityConstruct extends cdk.NestedStack {
             statistic: 'Sum',
           }),
           props.slackOAuthLambda.metricErrors({
+            period: cdk.Duration.minutes(5),
+            statistic: 'Sum',
+          }),
+          props.githubOAuthLambda.metricErrors({
             period: cdk.Duration.minutes(5),
             statistic: 'Sum',
           }),
