@@ -1,30 +1,20 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
-import {
-  ConsoleLogger,
-  GitHubClientImpl,
-  UserDaoImpl,
-  UserServiceImpl,
-  verifySlackSignature,
-} from '@pr-notify/core'
+import { ConsoleLogger, createSignedState, verifySlackSignature } from '@pr-notify/core'
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
 import { emitMetric } from '../shared/metrics'
 
-const USERS_TABLE_NAME = process.env['USERS_TABLE_NAME'] ?? ''
 const SLACK_SIGNING_SECRET = process.env['SLACK_SIGNING_SECRET'] ?? ''
-const GITHUB_TOKEN = process.env['GITHUB_TOKEN']
+const GITHUB_CLIENT_ID = process.env['GITHUB_CLIENT_ID'] ?? ''
+// Used as HMAC key for signing the OAuth state parameter
+const GITHUB_WEBHOOK_SECRET = process.env['GITHUB_WEBHOOK_SECRET'] ?? ''
 
-const dynamoClient = new DynamoDBClient({})
-const docClient = DynamoDBDocumentClient.from(dynamoClient)
-
-const userDao = new UserDaoImpl(docClient, USERS_TABLE_NAME)
-const githubClient = new GitHubClientImpl(GITHUB_TOKEN)
-const userService = new UserServiceImpl(userDao, githubClient)
 const logger = new ConsoleLogger()
 
+/** 5-minute expiry for OAuth state tokens */
+const STATE_EXPIRY_MS = 5 * 60 * 1000
+
 /**
- * Lambda handler for Slack slash commands
+ * Lambda handler for Slack slash commands.
  * Handles /pr-notify commands: link, prefs, help
  */
 export async function handler(
@@ -59,7 +49,7 @@ export async function handler(
     logger.info('Received slash command', { command, text, userId })
 
     // Parse subcommand
-    const [subcommand, ...args] = text.trim().split(/\s+/)
+    const [subcommand] = text.trim().split(/\s+/)
     emitMetric({
       metricName: 'CommandsUsed',
       value: 1,
@@ -69,7 +59,7 @@ export async function handler(
 
     switch (subcommand?.toLowerCase()) {
       case 'link':
-        return handleLinkCommand(userId, teamId, args)
+        return handleLinkCommand(userId, teamId)
       case 'prefs':
         return handlePrefsCommand()
       case 'help':
@@ -88,51 +78,51 @@ export async function handler(
   }
 }
 
-async function handleLinkCommand(
+/**
+ * Returns an ephemeral message with a "Connect GitHub" button that starts
+ * the GitHub OAuth flow. The button URL includes an HMAC-signed state
+ * parameter carrying the Slack user context to the OAuth callback.
+ */
+function handleLinkCommand(
   userId: string,
   teamId: string,
-  args: string[],
-): Promise<APIGatewayProxyResult> {
-  const githubUsername = args[0]
+): APIGatewayProxyResult {
+  const state = createSignedState(
+    { slackUserId: userId, slackWorkspaceId: teamId, exp: Date.now() + STATE_EXPIRY_MS },
+    GITHUB_WEBHOOK_SECRET,
+  )
 
-  if (!githubUsername) {
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        response_type: 'ephemeral',
-        text: 'Usage: `/pr-notify link <github-username>`',
-      }),
-    }
-  }
-
-  const result = await userService.linkGithubAccount(userId, teamId, githubUsername)
-
-  if (result.success) {
-    emitMetric({ metricName: 'AccountsLinked', value: 1, unit: 'Count' })
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        response_type: 'ephemeral',
-        text:
-          `Successfully linked your account to GitHub user \`${result.canonicalGithubUsername}\`! You'll now receive PR notifications via DM.`,
-      }),
-    }
-  }
-
-  logger.error('Link account failed', { reason: result.reason, message: result.message })
+  const githubAuthUrl =
+    `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&state=${state}`
 
   return {
     statusCode: 200,
     body: JSON.stringify({
       response_type: 'ephemeral',
-      text: result.message,
+      text: 'Connect your GitHub account to receive PR notifications.',
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text:
+              'Connect your GitHub account to verify your identity and start receiving PR notifications.',
+          },
+          accessory: {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Connect GitHub', emoji: true },
+            url: githubAuthUrl,
+            action_id: 'github_oauth_connect',
+            style: 'primary',
+          },
+        },
+      ],
     }),
   }
 }
 
 /**
  * Directs users to the App Home tab where preferences are managed.
- * Keeps preferences in a single canonical location to avoid sync issues.
  */
 function handlePrefsCommand(): APIGatewayProxyResult {
   return {
@@ -151,9 +141,9 @@ function handleHelpCommand(): APIGatewayProxyResult {
     body: JSON.stringify({
       response_type: 'ephemeral',
       text: `*PR Notify Commands:*
-• \`/pr-notify link <github-username>\` - Link your GitHub account
-• \`/pr-notify prefs\` - View your notification preferences
-• \`/pr-notify help\` - Show this help message`,
+\u2022 \`/pr-notify link\` - Connect your GitHub account
+\u2022 \`/pr-notify prefs\` - Manage notification preferences
+\u2022 \`/pr-notify help\` - Show this help message`,
     }),
   }
 }

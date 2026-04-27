@@ -10,6 +10,11 @@ export type {
   GitHubUserValidationResult,
   GitHubUserValidationSuccess,
 } from './github-client'
+export type {
+  GitHubAuthenticatedUser,
+  GitHubOAuthExchangeResult,
+  GitHubOAuthService,
+} from './github-oauth-service'
 export type { Logger } from './logger'
 export type { NotificationQueue } from './notification-queue'
 export type { OAuthExchangeResult, OAuthService } from './oauth-service'

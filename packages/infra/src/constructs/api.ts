@@ -8,6 +8,7 @@ export interface ApiConstructProps {
   slackCommandsLambda: lambda.Function
   slackEventsLambda: lambda.Function
   slackOAuthLambda: lambda.Function
+  githubOAuthLambda: lambda.Function
 }
 
 /**
@@ -132,6 +133,22 @@ export class ApiConstruct extends cdk.NestedStack {
     new cdk.CfnOutput(this, 'SlackOAuthCallbackUrl', {
       value: `${this.api.url}slack/oauth/callback`,
       description: 'URL to configure as OAuth Redirect URL in Slack App',
+    })
+
+    // GitHub OAuth callback for verified account linking
+    const githubResource = this.api.root.addResource('github')
+    const githubOAuthResource = githubResource.addResource('oauth')
+    const githubOAuthCallbackResource = githubOAuthResource.addResource('callback')
+    githubOAuthCallbackResource.addMethod(
+      'GET',
+      new apigateway.LambdaIntegration(props.githubOAuthLambda, {
+        proxy: true,
+      }),
+    )
+
+    new cdk.CfnOutput(this, 'GitHubOAuthCallbackUrl', {
+      value: `${this.api.url}github/oauth/callback`,
+      description: 'URL to configure as Callback URL in GitHub App settings',
     })
   }
 }

@@ -35,6 +35,7 @@ export class PrNotifyStack extends cdk.Stack {
       slackCommandsLambda: lambdas.slackCommandsLambda,
       slackEventsLambda: lambdas.slackEventsLambda,
       slackOAuthLambda: lambdas.slackOAuthLambda,
+      githubOAuthLambda: lambdas.githubOAuthLambda,
     })
 
     // Observability: CloudWatch dashboard, alarms, and Slack DM alerts
@@ -44,6 +45,7 @@ export class PrNotifyStack extends cdk.Stack {
       slackCommandsLambda: lambdas.slackCommandsLambda,
       slackEventsLambda: lambdas.slackEventsLambda,
       slackOAuthLambda: lambdas.slackOAuthLambda,
+      githubOAuthLambda: lambdas.githubOAuthLambda,
       deadLetterQueue: queues.deadLetterQueue,
       notificationQueue: queues.notificationQueue,
     })

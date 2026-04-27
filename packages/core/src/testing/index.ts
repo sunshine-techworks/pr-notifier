@@ -12,6 +12,7 @@ export type { GitHubApiUserResponse } from './factories'
 export {
   createMockDynamoDBDocumentClient,
   createMockGitHubClient,
+  createMockGitHubOAuthService,
   createMockLogger,
   createMockNotificationQueue,
   createMockNotificationService,

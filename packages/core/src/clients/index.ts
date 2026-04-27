@@ -1,6 +1,8 @@
 export { ConsoleLogger } from './console-logger'
 export { GitHubClientImpl } from './github-client-impl'
 export { NotificationQueueImpl } from './notification-queue-impl'
+export { createSignedState, verifySignedState } from './oauth-state'
+export type { OAuthStatePayload } from './oauth-state'
 export { SlackClientFactoryImpl } from './slack-client-factory-impl'
 export { SlackClientImpl } from './slack-client-impl'
 export { verifySlackSignature } from './slack-signature-verifier'

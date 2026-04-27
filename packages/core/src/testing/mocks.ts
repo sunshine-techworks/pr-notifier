@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import type { GitHubClient } from '../interfaces/github-client'
+import type { GitHubOAuthService } from '../interfaces/github-oauth-service'
 import type { Logger } from '../interfaces/logger'
 import type { NotificationQueue } from '../interfaces/notification-queue'
 import type { NotificationService } from '../interfaces/notification-service'
@@ -92,6 +93,16 @@ export function createMockSlackClientFactory(): SlackClientFactory {
 export function createMockGitHubClient(): GitHubClient {
   return {
     validateUser: vi.fn(),
+  }
+}
+
+/**
+ * Creates a mock GitHubOAuthService with all methods as vi.fn().
+ */
+export function createMockGitHubOAuthService(): GitHubOAuthService {
+  return {
+    exchangeCodeForToken: vi.fn(),
+    getAuthenticatedUser: vi.fn(),
   }
 }
 

@@ -31,6 +31,7 @@ export class LambdasConstruct extends cdk.NestedStack {
   public readonly slackCommandsLambda: lambda.Function
   public readonly slackEventsLambda: lambda.Function
   public readonly slackOAuthLambda: lambda.Function
+  public readonly githubOAuthLambda: lambda.Function
 
   constructor(scope: Construct, id: string, props: LambdasConstructProps) {
     super(scope, id)
@@ -65,6 +66,16 @@ export class LambdasConstruct extends cdk.NestedStack {
       this,
       'SlackAppIdParam',
       '/pr-notify/slack-app-id',
+    )
+    const githubClientId = ssm.StringParameter.fromStringParameterName(
+      this,
+      'GitHubClientIdParam',
+      '/pr-notify/github-client-id',
+    )
+    const githubClientSecret = ssm.StringParameter.fromStringParameterName(
+      this,
+      'GitHubClientSecretParam',
+      '/pr-notify/github-client-secret',
     )
 
     // Shared Lambda configuration for existing handlers.
@@ -171,6 +182,25 @@ export class LambdasConstruct extends cdk.NestedStack {
       },
     })
 
+    // --- GitHub OAuth Lambda ---
+
+    this.githubOAuthLambda = new lambdaNodejs.NodejsFunction(this, 'GitHubOAuthLambda', {
+      ...sharedConfig,
+      functionName: 'pr-notify-github-oauth',
+      entry: join(lambdasPath, 'github-oauth/handler.ts'),
+      handler: 'handler',
+      bundling: bundlingConfig,
+      description: 'Handles GitHub OAuth callback for verified account linking',
+      environment: {
+        ...sharedConfig.environment,
+        GITHUB_CLIENT_ID: githubClientId.stringValue,
+        GITHUB_CLIENT_SECRET: githubClientSecret.stringValue,
+      },
+    })
+
+    // Add GITHUB_CLIENT_ID to slack-commands (needed to build OAuth auth URL)
+    this.slackCommandsLambda.addEnvironment('GITHUB_CLIENT_ID', githubClientId.stringValue)
+
     // --- Permissions ---
 
     // Webhook ingest: queue + users read
@@ -189,14 +219,15 @@ export class LambdasConstruct extends cdk.NestedStack {
     props.workspacesTable.grantReadData(this.notificationProcessorLambda)
     props.prThreadsTable.grantReadWriteData(this.notificationProcessorLambda)
 
-    // Slack commands: users read/write for account linking
-    props.usersTable.grantReadWriteData(this.slackCommandsLambda)
-
     // Slack events: users read/write + workspaces read/write (token lookup + app_uninstalled)
     props.usersTable.grantReadWriteData(this.slackEventsLambda)
     props.workspacesTable.grantReadWriteData(this.slackEventsLambda)
 
-    // OAuth: workspaces read/write for storing installation tokens
+    // Slack OAuth: workspaces read/write for storing installation tokens
     props.workspacesTable.grantReadWriteData(this.slackOAuthLambda)
+
+    // GitHub OAuth: users read/write (account linking) + workspaces read (token lookup for DM)
+    props.usersTable.grantReadWriteData(this.githubOAuthLambda)
+    props.workspacesTable.grantReadData(this.githubOAuthLambda)
   }
 }
