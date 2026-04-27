@@ -33,14 +33,16 @@ PR Notify is a Slack app that sends personalized GitHub PR notifications via DM.
 ### Package Structure
 
 - **`packages/core`** - Shared business logic, types, and interfaces
-- **`packages/lambdas`** - AWS Lambda handlers (webhook-ingest, notification-processor, slack-commands, slack-events)
-- **`packages/infra`** - AWS CDK infrastructure (API Gateway, Lambda, DynamoDB, SQS)
+- **`packages/lambdas`** - AWS Lambda handlers (webhook-ingest, notification-processor, slack-commands, slack-events, slack-oauth, alert-notifier)
+- **`packages/infra`** - AWS CDK infrastructure (API Gateway, Lambda, DynamoDB, SQS, CloudWatch)
 
 ### Data Flow
 
 1. GitHub webhook → API Gateway → `webhook-ingest` Lambda → SQS queue
-2. SQS → `notification-processor` Lambda → Slack DM
+2. SQS → `notification-processor` Lambda → Slack DM. The first notification per (user, PR) posts top-level and the parent `ts` is recorded in `pr-notify-pr-threads` (TTL 30d); subsequent notifications post as thread replies.
 3. Slack commands/events → API Gateway → `slack-commands`/`slack-events` Lambda → DynamoDB
+4. Slack OAuth install → `slack-oauth` Lambda → workspaces table (per-workspace bot token)
+5. CloudWatch alarm → SNS → `alert-notifier` Lambda → owner Slack DM
 
 ### Key Patterns
 

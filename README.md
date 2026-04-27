@@ -27,6 +27,8 @@ PR Notify delivers only the GitHub PR activity that matters to you, directly to 
 - **Bot noise filtering** -- automatically detects bot actors (Dependabot, Codecov, etc.) with independent toggle
 - **Granular preferences** -- toggle each notification type on/off from the Slack App Home tab
 - **Rich Slack messages** -- Block Kit formatted notifications with PR details, branch info, actor avatars, and quick-action buttons
+- **Threaded by PR** -- the first notification for a PR posts top-level; subsequent updates (reviews, comments, mentions) arrive as thread replies under it, keeping your DMs tidy
+- **Readable push previews** -- macOS / iOS / mobile push notifications show type-aware summaries like `octocat requested your review on PR #11: Add OAuth flow` instead of raw enum names
 - **Self-service setup** -- users link their own GitHub accounts via `/pr-notify link`
 
 ## Quick Start
@@ -59,7 +61,7 @@ API Gateway --> webhook-ingest Lambda --> SQS Queue
                                              v
                                     notification-processor Lambda
                                     (user lookup, preference check,
-                                     Slack DM delivery)
+                                     thread lookup, Slack DM delivery)
 
 Slack Commands/Events
     |
@@ -69,7 +71,13 @@ API Gateway --> slack-commands Lambda  (account linking, help)
             --> slack-oauth Lambda     (OAuth install flow)
     |
     v
-DynamoDB (users, workspaces)
+DynamoDB (users, workspaces, pr-threads)
+
+CloudWatch Alarm
+    |
+    v
+SNS Topic --> alert-notifier Lambda --> owner Slack DM
+              (DLQ depth, lambda errors)
 ```
 
 ### Tech Stack
@@ -87,11 +95,11 @@ DynamoDB (users, workspaces)
 
 ### Package Structure
 
-| Package            | Description                                                                                         |
-| ------------------ | --------------------------------------------------------------------------------------------------- |
-| `packages/core`    | Shared business logic, types, interfaces, DAOs, clients, and services                               |
-| `packages/lambdas` | Lambda handlers (webhook-ingest, notification-processor, slack-commands, slack-events, slack-oauth) |
-| `packages/infra`   | AWS CDK infrastructure definitions                                                                  |
+| Package            | Description                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `packages/core`    | Shared business logic, types, interfaces, DAOs, clients, and services                                               |
+| `packages/lambdas` | Lambda handlers (webhook-ingest, notification-processor, slack-commands, slack-events, slack-oauth, alert-notifier) |
+| `packages/infra`   | AWS CDK infrastructure definitions                                                                                  |
 
 ## Development
 
@@ -168,6 +176,8 @@ PR Notify can be self-hosted on your own AWS account under the BSL 1.1 license.
    aws ssm put-parameter --name /pr-notify/slack-client-id --type String --value "..."
    aws ssm put-parameter --name /pr-notify/slack-client-secret --type String --value "..."
    aws ssm put-parameter --name /pr-notify/slack-app-id --type String --value "..."
+   # Owner Slack user ID, used by alert-notifier to deliver CloudWatch alarm DMs
+   aws ssm put-parameter --name /pr-notify/owner-slack-user-id --type String --value "U..."
    ```
 
 4. **Deploy**
@@ -180,17 +190,20 @@ PR Notify can be self-hosted on your own AWS account under the BSL 1.1 license.
 
 ### Environment Variables
 
-| Variable                 | Description                       | Used By                                |
-| ------------------------ | --------------------------------- | -------------------------------------- |
-| `USERS_TABLE_NAME`       | DynamoDB users table              | All handlers                           |
-| `WORKSPACES_TABLE_NAME`  | DynamoDB workspaces table         | All handlers                           |
-| `NOTIFICATION_QUEUE_URL` | SQS queue URL                     | webhook-ingest, notification-processor |
-| `SLACK_BOT_TOKEN`        | Fallback bot token (migration)    | slack-events, notification-processor   |
-| `SLACK_SIGNING_SECRET`   | Slack app signing secret          | slack-commands, slack-events           |
-| `GITHUB_WEBHOOK_SECRET`  | GitHub webhook secret             | webhook-ingest                         |
-| `SLACK_CLIENT_ID`        | Slack OAuth client ID             | slack-oauth                            |
-| `SLACK_CLIENT_SECRET`    | Slack OAuth client secret         | slack-oauth                            |
-| `SLACK_APP_ID`           | Slack app ID (for OAuth redirect) | slack-oauth                            |
+| Variable                 | Description                               | Used By                                |
+| ------------------------ | ----------------------------------------- | -------------------------------------- |
+| `USERS_TABLE_NAME`       | DynamoDB users table                      | All handlers                           |
+| `WORKSPACES_TABLE_NAME`  | DynamoDB workspaces table                 | All handlers                           |
+| `PR_THREADS_TABLE_NAME`  | DynamoDB PR thread tracking table (TTL)   | notification-processor                 |
+| `NOTIFICATION_QUEUE_URL` | SQS queue URL                             | webhook-ingest, notification-processor |
+| `SLACK_BOT_TOKEN`        | Fallback bot token (migration)            | slack-events, notification-processor   |
+| `SLACK_SIGNING_SECRET`   | Slack app signing secret                  | slack-commands, slack-events           |
+| `GITHUB_WEBHOOK_SECRET`  | GitHub webhook secret                     | webhook-ingest                         |
+| `SLACK_CLIENT_ID`        | Slack OAuth client ID                     | slack-oauth                            |
+| `SLACK_CLIENT_SECRET`    | Slack OAuth client secret                 | slack-oauth                            |
+| `SLACK_APP_ID`           | Slack app ID (for OAuth redirect)         | slack-oauth                            |
+| `ALERT_SLACK_BOT_TOKEN`  | Bot token used for alarm DMs (often same) | alert-notifier                         |
+| `OWNER_SLACK_USER_ID`    | Slack user ID that receives alarm DMs     | alert-notifier                         |
 
 ## Project Structure
 
@@ -208,15 +221,15 @@ pr-notifier/
     lambdas/
       src/
         webhook-ingest/           # GitHub webhook processing
-        notification-processor/   # SQS to Slack DM delivery
+        notification-processor/   # SQS to Slack DM delivery (with PR threading)
         slack-commands/           # /pr-notify slash command
         slack-events/             # App Home, preferences, uninstall
         slack-oauth/              # OAuth install flow
+        alert-notifier/           # CloudWatch alarm SNS subscriber (DMs the owner)
     infra/
       src/
-        constructs/     # CDK constructs (API, Database, Lambdas, Queues)
+        constructs/     # CDK constructs (API, Database, Lambdas, Queues, Observability)
         stacks/         # CDK stack composition
-  docs/                 # Landing page and privacy policy
 ```
 
 ## License
