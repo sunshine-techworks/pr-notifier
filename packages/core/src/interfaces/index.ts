@@ -1,4 +1,5 @@
 // DAO interfaces
+export type { PrThreadCreateResult, PrThreadDao } from './pr-thread-dao'
 export type { UserDao } from './user-dao'
 export type { WorkspaceDao } from './workspace-dao'
 

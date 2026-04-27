@@ -5,6 +5,7 @@ import type { Logger } from '../interfaces/logger'
 import type { NotificationQueue } from '../interfaces/notification-queue'
 import type { NotificationService } from '../interfaces/notification-service'
 import type { OAuthService } from '../interfaces/oauth-service'
+import type { PrThreadDao } from '../interfaces/pr-thread-dao'
 import type { SlackClient } from '../interfaces/slack-client'
 import type { SlackClientFactory } from '../interfaces/slack-client-factory'
 import type { UserDao } from '../interfaces/user-dao'
@@ -40,6 +41,16 @@ export function createMockWorkspaceDao(): WorkspaceDao {
     findById: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  }
+}
+
+/**
+ * Creates a mock PrThreadDao with all methods as vi.fn().
+ */
+export function createMockPrThreadDao(): PrThreadDao {
+  return {
+    findThread: vi.fn(),
+    createThread: vi.fn(),
   }
 }
 

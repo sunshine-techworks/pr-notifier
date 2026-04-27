@@ -113,6 +113,12 @@ export interface SlackMessage {
   text: string
   /** Block Kit blocks */
   blocks: SlackBlock[]
+  /**
+   * Parent message `ts` for threaded replies. When omitted the message is
+   * posted top-level. Slack accepts a parent `ts` regardless of whether it
+   * lives in a DM or channel.
+   */
+  threadTs?: string
 }
 
 /**

@@ -16,6 +16,7 @@ export {
   createMockNotificationQueue,
   createMockNotificationService,
   createMockOAuthService,
+  createMockPrThreadDao,
   createMockSlackClient,
   createMockSlackClientFactory,
   createMockSQSClient,
