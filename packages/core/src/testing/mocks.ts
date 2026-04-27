@@ -142,6 +142,7 @@ export function createMockNotificationService(): NotificationService {
   return {
     shouldNotify: vi.fn(),
     buildSlackBlocks: vi.fn(),
+    buildSummaryText: vi.fn(),
     createReviewRequestNotification: vi.fn(),
     createReviewSubmittedNotification: vi.fn(),
     createMentionNotification: vi.fn(),

@@ -15,6 +15,16 @@ export interface NotificationService {
   buildSlackBlocks(notification: Notification): SlackBlock[]
 
   /**
+   * Build the plain-text summary used as Slack message `text`.
+   *
+   * This is what macOS / iOS / mobile push previews and email digests show,
+   * since Block Kit `blocks` are only rendered by clients that support them.
+   * Vocabulary mirrors `buildSlackBlocks` headers and action verbs so the
+   * preview reads consistently with the rich message inside Slack.
+   */
+  buildSummaryText(notification: Notification): string
+
+  /**
    * Create a notification payload for review requested event
    */
   createReviewRequestNotification(params: {
