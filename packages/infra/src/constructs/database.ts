@@ -9,6 +9,7 @@ import type { Construct } from 'constructs'
 export class DatabaseConstruct extends cdk.NestedStack {
   public readonly usersTable: dynamodb.Table
   public readonly workspacesTable: dynamodb.Table
+  public readonly prThreadsTable: dynamodb.Table
 
   constructor(scope: Construct, id: string) {
     super(scope, id)
@@ -73,6 +74,27 @@ export class DatabaseConstruct extends cdk.NestedStack {
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    })
+
+    // PR threads table tracks the parent Slack message for each
+    // (slackUserId, repository, prNumber) so subsequent notifications
+    // for the same PR are posted as threaded replies. Records auto-expire
+    // via DynamoDB TTL on the `ttl` attribute (epoch seconds).
+    // PITR is skipped intentionally -- this data is ephemeral, has no
+    // business recovery value, and saves on storage cost.
+    this.prThreadsTable = new dynamodb.Table(this, 'PrThreadsTable', {
+      tableName: 'pr-notify-pr-threads',
+      partitionKey: {
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     })
   }

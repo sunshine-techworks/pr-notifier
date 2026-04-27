@@ -17,6 +17,7 @@ const __dirname = dirname(__filename)
 export interface LambdasConstructProps {
   usersTable: dynamodb.Table
   workspacesTable: dynamodb.Table
+  prThreadsTable: dynamodb.Table
   notificationQueue: sqs.Queue
 }
 
@@ -122,6 +123,13 @@ export class LambdasConstruct extends cdk.NestedStack {
         description: 'Processes notifications from SQS and sends Slack DMs',
       },
     )
+    // Only the notification processor needs the threads table; scope the
+    // env var here rather than putting it into sharedConfig so unrelated
+    // lambdas don't carry stale references to it.
+    this.notificationProcessorLambda.addEnvironment(
+      'PR_THREADS_TABLE_NAME',
+      props.prThreadsTable.tableName,
+    )
 
     this.slackCommandsLambda = new lambdaNodejs.NodejsFunction(this, 'SlackCommandsLambda', {
       ...sharedConfig,
@@ -170,6 +178,7 @@ export class LambdasConstruct extends cdk.NestedStack {
     props.usersTable.grantReadData(this.webhookIngestLambda)
 
     // Notification processor: SQS source + users read + workspaces read (token lookup)
+    // + PR threads read/write for threaded reply tracking
     this.notificationProcessorLambda.addEventSource(
       new lambdaEventSources.SqsEventSource(props.notificationQueue, {
         batchSize: 10,
@@ -178,6 +187,7 @@ export class LambdasConstruct extends cdk.NestedStack {
     )
     props.usersTable.grantReadData(this.notificationProcessorLambda)
     props.workspacesTable.grantReadData(this.notificationProcessorLambda)
+    props.prThreadsTable.grantReadWriteData(this.notificationProcessorLambda)
 
     // Slack commands: users read/write for account linking
     props.usersTable.grantReadWriteData(this.slackCommandsLambda)
