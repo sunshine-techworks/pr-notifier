@@ -10,6 +10,8 @@ export {
   notificationSchema,
   type NotificationType,
   notificationTypeSchema,
+  type PrThread,
+  prThreadSchema,
   type QuietHours,
   quietHoursSchema,
   type ReviewState,

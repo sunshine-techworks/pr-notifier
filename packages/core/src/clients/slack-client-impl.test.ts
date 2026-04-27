@@ -122,6 +122,37 @@ describe('SlackClientImpl', () => {
       expect(result.channel).toBeUndefined()
       expect(result.ts).toBeUndefined()
     })
+
+    it('forwards threadTs as thread_ts when posting a threaded reply', async () => {
+      mockChatPostMessage.mockResolvedValue({ ok: true, channel: 'D1', ts: '2.0' })
+
+      await client.sendDirectMessage('U12345678', {
+        text: 'reply',
+        blocks: [{ type: 'section', text: { type: 'mrkdwn', text: 'reply' } }],
+        threadTs: '1700000000.000100',
+      })
+
+      expect(mockChatPostMessage).toHaveBeenCalledWith({
+        channel: 'U12345678',
+        text: 'reply',
+        blocks: [{ type: 'section', text: { type: 'mrkdwn', text: 'reply' } }],
+        thread_ts: '1700000000.000100',
+      })
+    })
+
+    it('omits thread_ts entirely when threadTs is not provided', async () => {
+      mockChatPostMessage.mockResolvedValue({ ok: true })
+
+      await client.sendDirectMessage('U12345678', {
+        text: 'top-level',
+        blocks: [],
+      })
+
+      const args = mockChatPostMessage.mock.calls[0][0]
+      // Sending an explicit thread_ts: undefined would let Slack treat the
+      // call as a threaded reply with a missing parent — verify it is absent.
+      expect('thread_ts' in args).toBe(false)
+    })
   })
 
   describe('sendChannelMessage', () => {

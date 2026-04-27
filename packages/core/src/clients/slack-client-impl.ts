@@ -27,6 +27,10 @@ export class SlackClientImpl implements SlackClient {
         channel: userId,
         text: message.text,
         blocks: message.blocks,
+        // Conditionally include thread_ts so the call shape stays identical
+        // for non-threaded messages and we don't enable any default reply
+        // broadcast behavior.
+        ...(message.threadTs ? { thread_ts: message.threadTs } : {}),
       })
 
       return {
@@ -53,6 +57,7 @@ export class SlackClientImpl implements SlackClient {
         channel: channelId,
         text: message.text,
         blocks: message.blocks,
+        ...(message.threadTs ? { thread_ts: message.threadTs } : {}),
       })
 
       return {

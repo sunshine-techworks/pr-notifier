@@ -112,3 +112,22 @@ export const notificationSchema = z.object({
 
 /** Notification payload to be queued and processed */
 export type Notification = z.infer<typeof notificationSchema>
+
+// --- PR Thread ---
+// Tracks the parent Slack message we sent for a (user, PR) pair so subsequent
+// notifications for the same PR are posted as thread replies instead of new
+// top-level DMs. Records auto-expire via DynamoDB TTL after a fixed window.
+export const prThreadSchema = z.object({
+  slackUserId: z.string(),
+  repository: z.string(), // owner/repo format
+  prNumber: z.number(),
+  // Slack channel ID hosting the parent message. For DMs this is the IM
+  // channel ID returned by chat.postMessage, not the user ID.
+  channelId: z.string(),
+  // Timestamp of the parent message; used as `thread_ts` for replies.
+  threadTs: z.string(),
+  createdAt: z.string(), // ISO timestamp
+})
+
+/** Maps a (slackUserId, repository, prNumber) to the parent Slack message we send replies under */
+export type PrThread = z.infer<typeof prThreadSchema>
