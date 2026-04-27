@@ -105,6 +105,46 @@ export class NotificationServiceImpl implements NotificationService {
     return blocks
   }
 
+  /**
+   * Builds the plain-text summary used as the Slack message `text` field.
+   * Slack falls back to this string for push notifications, macOS Notification
+   * Centre, screen readers, and email digests, so it must be human-readable
+   * on its own. Vocabulary mirrors the per-type Block Kit headers / action
+   * verbs (see getHeaderText, getActionText) so a user reading the preview
+   * and then opening Slack sees consistent wording.
+   */
+  buildSummaryText(notification: Notification): string {
+    const { type, actorGithubUsername, prNumber, prTitle, reviewState } = notification
+    const prRef = `PR #${prNumber}: ${prTitle}`
+
+    switch (type) {
+      case 'review_requested':
+        return `${actorGithubUsername} requested your review on ${prRef}`
+      case 'review_submitted':
+        switch (reviewState) {
+          case 'approved':
+            return `${actorGithubUsername} approved ${prRef}`
+          case 'changes_requested':
+            return `${actorGithubUsername} requested changes on ${prRef}`
+          // Treat undefined the same as 'commented' to stay safe if a webhook
+          // arrives without the field (matches getActionText's default).
+          case 'commented':
+          default:
+            return `${actorGithubUsername} reviewed ${prRef}`
+        }
+      case 'comment':
+        return `${actorGithubUsername} commented on ${prRef}`
+      case 'mention':
+        return `${actorGithubUsername} mentioned you on ${prRef}`
+      // CI omits the actor: the commit author isn't a useful "who failed"
+      // and the actor for check_run events is often a bot account.
+      case 'ci_failure':
+        return `CI failed on ${prRef}`
+      default:
+        return `New notification for ${prRef}`
+    }
+  }
+
   createReviewRequestNotification(params: {
     targetUser: User
     actorGithubUsername: string

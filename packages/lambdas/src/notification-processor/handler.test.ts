@@ -79,6 +79,7 @@ const mocks = vi.hoisted(() => {
   const notificationService = {
     shouldNotify: vi.fn().mockReturnValue(true),
     buildSlackBlocks: vi.fn().mockReturnValue([]),
+    buildSummaryText: vi.fn().mockReturnValue('summary'),
     createReviewRequestNotification: vi.fn(),
     createReviewSubmittedNotification: vi.fn(),
     createMentionNotification: vi.fn(),

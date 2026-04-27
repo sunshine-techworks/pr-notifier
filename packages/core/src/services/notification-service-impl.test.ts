@@ -393,6 +393,123 @@ describe('NotificationServiceImpl', () => {
     })
   })
 
+  describe('buildSummaryText', () => {
+    // The summary string is what macOS / mobile push previews render. The
+    // assertions below pin the exact wording per type so vocabulary changes
+    // are surfaced as test diffs and stay in sync with the visible Block Kit
+    // headers / action verbs.
+
+    it('frames a review request as "requested your review on"', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'review_requested',
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat requested your review on PR #11: Add OAuth flow')
+    })
+
+    it('uses "approved" for review_submitted with reviewState=approved', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'review_submitted',
+          reviewState: 'approved',
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat approved PR #11: Add OAuth flow')
+    })
+
+    it('uses "requested changes on" for reviewState=changes_requested', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'review_submitted',
+          reviewState: 'changes_requested',
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat requested changes on PR #11: Add OAuth flow')
+    })
+
+    it('uses "reviewed" for reviewState=commented', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'review_submitted',
+          reviewState: 'commented',
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat reviewed PR #11: Add OAuth flow')
+    })
+
+    it('falls back to "reviewed" when reviewState is missing on review_submitted', () => {
+      // A defensive case: webhooks normally include reviewState, but the
+      // schema marks it optional and we want a sensible string either way.
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'review_submitted',
+          // reviewState intentionally omitted
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat reviewed PR #11: Add OAuth flow')
+    })
+
+    it('frames a comment as "commented on"', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'comment',
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat commented on PR #11: Add OAuth flow')
+    })
+
+    it('frames a mention as "mentioned you on"', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'mention',
+          actorGithubUsername: 'octocat',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('octocat mentioned you on PR #11: Add OAuth flow')
+    })
+
+    it('omits the actor for ci_failure (the actor is rarely a meaningful "who")', () => {
+      const text = service.buildSummaryText(
+        createTestNotification({
+          type: 'ci_failure',
+          actorGithubUsername: 'github-actions[bot]',
+          prNumber: 11,
+          prTitle: 'Add OAuth flow',
+        }),
+      )
+
+      expect(text).toBe('CI failed on PR #11: Add OAuth flow')
+    })
+  })
+
   describe('createReviewRequestNotification', () => {
     it('creates notification with correct fields', () => {
       const user = createTestUser({

@@ -109,7 +109,7 @@ async function processRecord(record: SQSRecord): Promise<void> {
   const blocks = notificationService.buildSlackBlocks(notification)
   const result = await slackClient.sendDirectMessage(user.slackUserId, {
     channel: user.slackUserId,
-    text: `New ${notification.type} notification for PR #${notification.prNumber}`,
+    text: notificationService.buildSummaryText(notification),
     blocks,
     ...(existingThread ? { threadTs: existingThread.threadTs } : {}),
   })
