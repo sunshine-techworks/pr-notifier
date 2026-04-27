@@ -269,5 +269,47 @@ export class ObservabilityConstruct extends cdk.NestedStack {
         ],
       }),
     )
+
+    // Row 3: PR Threading -- hit rate (replies vs top-level) and race counter.
+    // Race detection counts the duplicate top-level DMs caused by concurrent
+    // SQS records for the same PR (see notification-processor handler comment).
+    dashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: 'PR Thread Hit Rate',
+        width: 12,
+        right: [],
+        left: [
+          new cloudwatch.Metric({
+            namespace: 'PRNotify',
+            metricName: 'NotificationsThreaded',
+            dimensionsMap: { Threaded: 'true' },
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: 'Threaded reply',
+          }),
+          new cloudwatch.Metric({
+            namespace: 'PRNotify',
+            metricName: 'NotificationsThreaded',
+            dimensionsMap: { Threaded: 'false' },
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: 'Top-level',
+          }),
+        ],
+      }),
+      new cloudwatch.GraphWidget({
+        title: 'PR Thread Race (duplicate top-level DMs)',
+        width: 12,
+        right: [],
+        left: [
+          new cloudwatch.Metric({
+            namespace: 'PRNotify',
+            metricName: 'PrThreadRaceDetected',
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+          }),
+        ],
+      }),
+    )
   }
 }

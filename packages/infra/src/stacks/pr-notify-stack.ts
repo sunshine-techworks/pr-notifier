@@ -25,6 +25,7 @@ export class PrNotifyStack extends cdk.Stack {
     const lambdas = new LambdasConstruct(this, 'Lambdas', {
       usersTable: database.usersTable,
       workspacesTable: database.workspacesTable,
+      prThreadsTable: database.prThreadsTable,
       notificationQueue: queues.notificationQueue,
     })
 
